@@ -18,7 +18,7 @@ Publicado em: https://aldenorneto.github.io/central-de-ferramentas/
 ## Adicionar uma ferramenta
 
 1. Crie `tools/<id>/index.html`, com tudo inline (CSS e JS) e um link `<a href="../../">← Central de ferramentas</a>`.
-2. Acrescente uma linha ao array `FERRAMENTAS` no `index.html` da raiz.
+2. Acrescente uma linha ao array `FERRAMENTAS` em `ferramentas.js` (usado pelo hub e por `/tools/`).
 3. Faça commit e push; o GitHub Pages publica sozinho.
 
 ## Ferramentas que usam chave de API

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Ferramentas · Central</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Cg fill='%23818cf8'%3E%3Crect x='14' y='14' width='16' height='16' rx='3'/%3E%3Crect x='34' y='14' width='16' height='16' rx='3'/%3E%3Crect x='14' y='34' width='16' height='16' rx='3'/%3E%3Crect x='34' y='34' width='16' height='16' rx='3' fill='%23f8fafc'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root { color-scheme: dark; --bg:#0b1120; --panel:#111a2e; --card:#172036; --line:#26334f; --text:#e2e8f0; --muted:#8b9bb8; --accent:#818cf8; --accent-2:#a5b4fc; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+  main { max-width: 720px; margin: 0 auto; padding: 28px 20px 56px; }
+  .voltar { display: inline-block; margin-bottom: 14px; font-size: 13px; color: var(--accent-2); text-decoration: none; }
+  .voltar:hover { text-decoration: underline; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 20px; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  a.item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px; text-decoration: none; color: inherit; background: var(--card); border: 1px solid var(--line); transition: border-color .15s; }
+  a.item:hover, a.item:focus-visible { border-color: var(--accent); outline: none; }
+  .ic { flex: none; width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 24px; background: var(--panel); }
+  .nome { font-weight: 600; }
+  .desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .seta { margin-left: auto; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <a class="voltar" href="../">← Central de ferramentas</a>
+  <h1>🧰 Todas as ferramentas</h1>
+  <p class="sub" id="sub"></p>
+  <ul id="lista"></ul>
+</main>
+<script src="../ferramentas.js"></script>
+<script>
+  const lista = document.getElementById('lista');
+  document.getElementById('sub').textContent = FERRAMENTAS.length + ' ferramentas. Toque numa para abrir.';
+  FERRAMENTAS.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt')).forEach(f => {
+    const li = document.createElement('li'), a = document.createElement('a');
+    a.className = 'item'; a.href = f.id + '/';
+    a.innerHTML = '<div class="ic"></div><div><div class="nome"></div><div class="desc"></div></div><span class="seta">›</span>';
+    a.querySelector('.ic').textContent = f.icone;
+    a.querySelector('.nome').textContent = f.nome;
+    a.querySelector('.desc').textContent = f.desc;
+    li.append(a); lista.append(li);
+  });
+</script>
+</body>
+</html>
