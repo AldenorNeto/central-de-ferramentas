@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Diferença entre horários</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%231e293b' stroke='%23818cf8' stroke-width='5'/%3E%3Cpath d='M32 16v16l11 7' fill='none' stroke='%23f8fafc' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        accent-color: #818cf8;
+      }
+      body {
+        font-family: system-ui, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        margin: 0;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+      .head,
+      .row {
+        display: grid;
+        grid-template-columns: 110px 110px 150px 40px 40px;
+        gap: 10px;
+        align-items: center;
+      }
+      .head {
+        font-size: 13px;
+        color: #94a3b8;
+      }
+      #rows {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px;
+        font: inherit;
+        font-size: 22px;
+        text-align: center;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        background: #1e293b;
+        color: #f8fafc;
+        font-variant-numeric: tabular-nums;
+      }
+      input.bad {
+        border-color: #f87171;
+      }
+      .res {
+        font-size: 16px;
+        color: #cbd5e1;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+      }
+      .res small {
+        display: block;
+        color: #94a3b8;
+        font-size: 12px;
+      }
+      button {
+        height: 40px;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .add {
+        background: #818cf8;
+        color: #0f172a;
+      }
+      .del {
+        background: #334155;
+        color: #e2e8f0;
+      }
+      .total {
+        border-top: 1px solid #334155;
+        padding-top: 16px;
+        text-align: center;
+      }
+      #totalMin {
+        font-size: clamp(44px, 14vw, 96px);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      #totalHm {
+        font-size: 22px;
+        color: #cbd5e1;
+      }
+      #note {
+        color: #94a3b8;
+        font-size: 13px;
+      }
+      .voltar { display: inline-block; margin: 0 0 14px; font: 13px system-ui, sans-serif; color: #a5b4fc; text-decoration: none; }
+  .voltar:hover { text-decoration: underline; }
+</style>
+  </head>
+  <body>
+<a class="voltar" href="../../">← Central de ferramentas</a>
+
+    <div>
+      <div class="head">
+        <span>De</span><span>Até</span><span>Duração</span><span></span
+        ><span></span>
+      </div>
+      <div id="rows"></div>
+    </div>
+
+    <div class="total">
+      <div id="totalMin">0 min</div>
+      <div id="totalHm">0h 00min</div>
+    </div>
+    <div id="note">
+      Formato HH:MM (24h). Se o fim for menor que o início, conta como dia
+      seguinte.
+    </div>
+
+    <script>
+      const rowsEl = document.getElementById("rows");
+      const VALID = /^([01]\d|2[0-3]):[0-5]\d$/;
+      const toMin = (v) => {
+        const [h, m] = v.split(":").map(Number);
+        return h * 60 + m;
+      };
+      const hm = (d) =>
+        `${Math.floor(d / 60)}h ${String(d % 60).padStart(2, "0")}min`;
+
+      function mask(raw) {
+        if (/^\d:/.test(raw)) raw = "0" + raw; // "9:30" -> "09:30"
+        const d = raw.replace(/\D/g, "").slice(0, 4);
+        return d.length > 2 ? d.slice(0, 2) + ":" + d.slice(2) : d;
+      }
+
+      function makeInput(value) {
+        const i = document.createElement("input");
+        i.type = "text";
+        i.inputMode = "numeric";
+        i.placeholder = "HH:MM";
+        i.maxLength = 5;
+        i.value = value || "";
+        return i;
+      }
+
+      function addRow(afterRow, a = "", b = "") {
+        const row = document.createElement("div");
+        row.className = "row";
+        const res = document.createElement("div");
+        res.className = "res";
+        const add = document.createElement("button");
+        add.className = "add";
+        add.textContent = "+";
+        add.title = "Adicionar intervalo";
+        const del = document.createElement("button");
+        del.className = "del";
+        del.textContent = "×";
+        del.title = "Remover";
+        row.append(makeInput(a), makeInput(b), res, add, del);
+        afterRow ? afterRow.after(row) : rowsEl.append(row);
+        return row;
+      }
+
+      function calc() {
+        let total = 0;
+        for (const row of rowsEl.children) {
+          const [ia, ib] = row.querySelectorAll("input");
+          const res = row.querySelector(".res");
+          ia.classList.toggle(
+            "bad",
+            ia.value.length === 5 && !VALID.test(ia.value),
+          );
+          ib.classList.toggle(
+            "bad",
+            ib.value.length === 5 && !VALID.test(ib.value),
+          );
+          if (!VALID.test(ia.value) || !VALID.test(ib.value)) {
+            res.textContent = "—";
+            continue;
+          }
+          let d = toMin(ib.value) - toMin(ia.value);
+          const crossed = d < 0;
+          if (crossed) d += 1440;
+          total += d;
+          res.innerHTML = `${d} min<small>${hm(d)}${crossed ? " · dia seguinte" : ""}</small>`;
+        }
+        document.getElementById("totalMin").textContent = total + " min";
+        document.getElementById("totalHm").textContent = hm(total);
+      }
+
+      rowsEl.addEventListener("input", (e) => {
+        if (e.target.tagName === "INPUT") {
+          e.target.value = mask(e.target.value);
+          // pula para o próximo campo ao completar HH:MM
+          if (e.target.value.length === 5) {
+            const inputs = [...rowsEl.querySelectorAll("input")];
+            const next = inputs[inputs.indexOf(e.target) + 1];
+            if (next && !next.value && e.inputType !== "deleteContentBackward")
+              next.focus();
+          }
+        }
+        calc();
+      });
+
+      rowsEl.addEventListener("click", (e) => {
+        const row = e.target.closest(".row");
+        if (!row) return;
+        if (e.target.classList.contains("add"))
+          addRow(row).querySelector("input").focus();
+        if (e.target.classList.contains("del")) {
+          if (rowsEl.children.length > 1) row.remove();
+          else row.querySelectorAll("input").forEach((i) => (i.value = ""));
+          calc();
+        }
+      });
+
+      addRow(null, "21:48", "23:31");
+      calc();
+    </script>
+  </body>
+</html>

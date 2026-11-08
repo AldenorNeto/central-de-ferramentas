@@ -1,0 +1,1312 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Mixer de sons</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Cg stroke='%23818cf8' stroke-width='6' stroke-linecap='round'%3E%3Cpath d='M16 26v12M26 18v28M36 24v16M46 14v36'/%3E%3C/g%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        accent-color: #818cf8;
+        --bg: #0b1120;
+        --panel: #111a2e;
+        --card: #172036;
+        --line: #26334f;
+        --text: #e2e8f0;
+        --muted: #8b9bb8;
+        --accent: #818cf8;
+        --accent-2: #a5b4fc;
+        --ok: #34d399;
+        --warn: #fbbf24;
+        --bad: #f87171;
+        --info: #38bdf8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+      }
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 24px 20px 48px;
+      }
+      header h1 {
+        font-size: 26px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      header p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      code {
+        background: var(--panel);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+
+      /* ---------- barra de controles ---------- */
+      .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        margin: 20px -8px 8px;
+        padding: 12px 8px;
+        background: color-mix(in srgb, var(--bg) 88%, transparent);
+        backdrop-filter: blur(8px);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, auto));
+        gap: 12px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+      .group > .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--muted);
+      }
+      .group .ctl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .group.master .ctl {
+        gap: 10px;
+        flex-wrap: nowrap;
+      }
+      .group.master input {
+        flex: 1;
+        min-width: 100px;
+      }
+      .group.master .mv {
+        width: 38px;
+        text-align: right;
+        color: var(--muted);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      button {
+        font: inherit;
+        font-size: 13px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 7px 11px;
+        cursor: pointer;
+        background: var(--panel);
+        color: var(--text);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      button:hover {
+        background: var(--card);
+        border-color: #3a4a6e;
+      }
+      button.primary {
+        background: var(--accent);
+        color: #0b1120;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      button.primary:hover {
+        background: var(--accent-2);
+      }
+      button.danger {
+        color: var(--bad);
+        border-color: color-mix(in srgb, var(--bad) 40%, var(--line));
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .seg button {
+        border: 0;
+        border-radius: 0;
+        background: var(--panel);
+      }
+      .seg button.on {
+        background: var(--accent);
+        color: #0b1120;
+        font-weight: 600;
+      }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted);
+        margin-left: 4px;
+      }
+      .status::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--line);
+      }
+      .status.dirty::before {
+        background: var(--warn);
+      }
+      .status.ok::before {
+        background: var(--ok);
+      }
+
+      /* ---------- famílias ---------- */
+      .family {
+        margin-top: 28px;
+      }
+      .fhead {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .fhead .fic {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 20px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+      }
+      .fhead h2 {
+        margin: 0;
+        font-size: 17px;
+      }
+      .fhead .fsub {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .fhead .count {
+        margin-left: auto;
+        font-size: 12px;
+        padding: 3px 9px;
+        border-radius: 99px;
+        background: var(--panel);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+      .fhead .count.has {
+        color: var(--ok);
+        border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 12px;
+      }
+
+      /* ---------- cards ---------- */
+      .card {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .card.on {
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 1px var(--accent) inset,
+          0 4px 18px -8px var(--accent);
+      }
+      .card .ic {
+        flex: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 24px;
+        background: var(--panel);
+      }
+      .card.on .ic {
+        background: color-mix(in srgb, var(--accent) 22%, var(--panel));
+      }
+      .card .body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .card .row1 {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .card .name {
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .card .val {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .card.on .val {
+        color: var(--accent-2);
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .tag {
+        font-size: 11px;
+        line-height: 1;
+        padding: 4px 7px;
+        border-radius: 99px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .tag.warn {
+        color: var(--warn);
+        background: color-mix(in srgb, var(--warn) 12%, transparent);
+        border-color: color-mix(in srgb, var(--warn) 30%, transparent);
+      }
+      .tag.bad {
+        color: var(--bad);
+        background: color-mix(in srgb, var(--bad) 12%, transparent);
+        border-color: color-mix(in srgb, var(--bad) 30%, transparent);
+      }
+      .tag.info {
+        color: var(--info);
+        background: color-mix(in srgb, var(--info) 12%, transparent);
+        border-color: color-mix(in srgb, var(--info) 30%, transparent);
+      }
+      .tag.mute {
+        color: var(--muted);
+        background: var(--panel);
+        border-color: var(--line);
+      }
+      .note {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .beats {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .beats button {
+        padding: 4px 8px;
+        font-size: 11px;
+        border-radius: 6px;
+      }
+      .beats button.sel {
+        background: var(--accent);
+        color: #0b1120;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      .hide {
+        display: none !important;
+      }
+
+      /* ---------- sliders ---------- */
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 99px;
+        outline: none;
+        cursor: pointer;
+        background: linear-gradient(
+          to right,
+          var(--accent) var(--p, 0%),
+          #2a3858 var(--p, 0%)
+        );
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid var(--accent);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid var(--accent);
+      }
+      input[type="range"]:focus-visible {
+        outline: 2px solid var(--accent-2);
+        outline-offset: 4px;
+      }
+
+      /* ---------- pesquisa ---------- */
+      details {
+        margin-top: 32px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 4px 18px;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+        padding: 12px 0;
+      }
+      .research {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .research li {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 12px;
+        font-size: 14px;
+        line-height: 1.55;
+        color: #cbd5e1;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+      .research li:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .research b {
+        color: var(--text);
+      }
+      .research a {
+        color: var(--accent-2);
+      }
+      .research .tag {
+        display: inline-block;
+        margin-top: 4px;
+      }
+      @media (max-width: 640px) {
+        .research li {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+      }
+      footer {
+        margin-top: 20px;
+        font-size: 12px;
+        color: #64748b;
+      }
+      .voltar { display: inline-block; margin: 0 0 14px; font: 13px system-ui, sans-serif; color: #a5b4fc; text-decoration: none; }
+  .voltar:hover { text-decoration: underline; }
+</style>
+  </head>
+  <body>
+    <main>
+<a class="voltar" href="../../">← Central de ferramentas</a>
+
+      <header>
+        <h1>🎚️ Mixer de sons</h1>
+        <p>
+          Misture ruídos de foco e sons ambientes. Os sons da natureza podem vir
+          de arquivos (pasta <code>sons/</code>) ou ser gerados na hora pelo
+          navegador.
+        </p>
+      </header>
+
+      <div class="toolbar">
+        <div class="group master">
+          <span class="label">🔊 Volume geral</span>
+          <div class="ctl">
+            <input
+              type="range"
+              id="master"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.7"
+            /><span class="mv" id="mv">70%</span>
+          </div>
+        </div>
+        <div class="group">
+          <span class="label">✨ Cenas prontas</span>
+          <div class="ctl">
+            <button data-preset="foco">🎯 Foco</button>
+            <button data-preset="chuva">⛈️ Chuva + trovão</button>
+            <button data-preset="acampamento">🔥 Acampamento</button>
+            <button data-preset="floresta">🌲 Floresta</button>
+          </div>
+        </div>
+        <div class="group">
+          <span class="label">🎼 Fonte dos sons</span>
+          <div class="ctl">
+            <div class="seg">
+              <button data-mode="rec">📁 Arquivos</button>
+              <button data-mode="synth">⚙️ Sintetizado</button>
+            </div>
+          </div>
+        </div>
+        <div class="group">
+          <span class="label">💾 Configuração</span>
+          <div class="ctl">
+            <button id="save">💾 Salvar</button>
+            <button id="load">📂 Carregar</button>
+            <button id="stop" class="danger">⏹ Parar tudo</button>
+            <span class="status" id="status"></span>
+          </div>
+        </div>
+      </div>
+
+      <div id="families"></div>
+
+      <details>
+        <summary>📚 O que a pesquisa diz (e o que não diz)</summary>
+        <ul class="research">
+          <li>
+            <div>
+              <b>Ruído branco e rosa</b><br /><span class="tag warn"
+                >Evidência pequena</span
+              >
+            </div>
+            <div>
+              Uma meta-análise de 2024 (13 estudos, 335 participantes) achou
+              melhora pequena em tarefas de atenção em crianças e jovens com
+              TDAH. Em quem não tem TDAH, o efeito foi levemente negativo. Os
+              testes foram de laboratório, então o benefício no dia a dia não
+              está provado.
+              <a
+                href="https://news.ohsu.edu/2024/08/09/white-pink-noise-improve-focus-for-children-with-adhd-ohsu-study-shows"
+                target="_blank"
+                rel="noopener"
+                >OHSU</a
+              >
+              ·
+              <a
+                href="https://www.bps.org.uk/research-digest/does-pink-noise-really-help-you-focus"
+                target="_blank"
+                rel="noopener"
+                >BPS</a
+              >
+            </div>
+          </li>
+          <li>
+            <div>
+              <b>Ruído marrom</b><br /><span class="tag bad"
+                >Sem estudos controlados</span
+              >
+            </div>
+            <div>
+              A popularidade vem mais de relatos que de ciência. Não achei
+              estudos controlados que o comparem com branco ou rosa. Pode ajudar
+              a mascarar barulho e pensamentos, mas isso é hipótese.
+            </div>
+          </li>
+          <li>
+            <div>
+              <b>Batidas binaurais</b><br /><span class="tag warn"
+                >Evidência mista</span
+              >
+            </div>
+            <div>
+              As revisões mostram efeitos pequenos a moderados e inconsistentes,
+              dependendo da frequência e do desenho do estudo. Um estudo de 2025
+              sugere que batidas gama (~40 Hz) com tom portador grave e
+              mascaradas por ruído branco ajudam na atenção sustentada, mas
+              outra meta-análise achou que mascarar não é necessário. Precisa de
+              fones estéreo.
+              <a
+                href="https://link.springer.com/article/10.1007/s00426-022-01706-7"
+                target="_blank"
+                rel="noopener"
+                >Meta-análise</a
+              >
+              ·
+              <a
+                href="https://www.nature.com/articles/s41598-025-88517-z"
+                target="_blank"
+                rel="noopener"
+                >Sci. Reports 2025</a
+              >
+            </div>
+          </li>
+          <li>
+            <div>
+              <b>Sons da natureza</b><br /><span class="tag mute"
+                >Mascaram e relaxam</span
+              >
+            </div>
+            <div>
+              Servem sobretudo para mascarar barulho e relaxar. Aqui eles não
+              têm evidência própria de melhorar o foco.
+            </div>
+          </li>
+          <li>
+            <div><b>Aviso</b></div>
+            <div style="color: var(--warn)">
+              Os resumos acima vêm de buscas, não da leitura dos artigos
+              completos. Confira as fontes antes de tomar qualquer coisa como
+              certa. Isto não é aconselhamento médico.
+            </div>
+          </li>
+        </ul>
+      </details>
+      <footer>
+        Arquivos: Cozy Nature Ambience (pacote gratuito no itch.io, uso pessoal
+        e comercial liberado, proibido redistribuir os arquivos). Crédito: "Cozy
+        Nature Ambience by Spaceyyy". Licença em <code>sons/LICENSE.txt</code>.
+      </footer>
+    </main>
+
+    <script>
+      (() => {
+        const BEATS = [
+          ["Teta", 6],
+          ["Alfa", 10],
+          ["Beta", 20],
+          ["Gama", 40],
+        ];
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        let ctx,
+          master,
+          masterVal = 0.7;
+        const bufs = {};
+
+        function noiseBuf(type) {
+          if (bufs[type]) return bufs[type];
+          const sr = ctx.sampleRate,
+            len = sr * 8;
+          const buf = ctx.createBuffer(1, len, sr),
+            d = buf.getChannelData(0);
+          let b0 = 0,
+            b1 = 0,
+            b2 = 0,
+            b3 = 0,
+            b4 = 0,
+            b5 = 0,
+            b6 = 0,
+            last = 0;
+          for (let i = 0; i < len; i++) {
+            const w = Math.random() * 2 - 1;
+            if (type === "white") d[i] = w * 0.8;
+            else if (type === "pink") {
+              b0 = 0.99886 * b0 + w * 0.0555179;
+              b1 = 0.99332 * b1 + w * 0.0750759;
+              b2 = 0.969 * b2 + w * 0.153852;
+              b3 = 0.8665 * b3 + w * 0.3104856;
+              b4 = 0.55 * b4 + w * 0.5329522;
+              b5 = -0.7616 * b5 - w * 0.016898;
+              d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
+              b6 = w * 0.115926;
+            } else {
+              last = (last + 0.02 * w) / 1.02;
+              d[i] = last * 3.5;
+            }
+          }
+          for (let i = 0; i < 2000; i++) {
+            const f = i / 2000;
+            d[i] *= f;
+            d[len - 1 - i] *= f;
+          }
+          return (bufs[type] = buf);
+        }
+        const noise = (type, out) => {
+          const s = ctx.createBufferSource();
+          s.buffer = noiseBuf(type);
+          s.loop = true;
+          s.start(0, rnd(0, 4));
+          if (out) s.connect(out);
+          return s;
+        };
+        const chain = (...nodes) => {
+          for (let i = 0; i < nodes.length - 1; i++)
+            nodes[i].connect(nodes[i + 1]);
+          return nodes[0];
+        };
+        const filt = (type, f, q = 0.7) => {
+          const n = ctx.createBiquadFilter();
+          n.type = type;
+          n.frequency.value = f;
+          n.Q.value = q;
+          return n;
+        };
+        const gain = (v) => {
+          const g = ctx.createGain();
+          g.gain.value = v;
+          return g;
+        };
+        const lfo = (freq, depth, target) => {
+          const o = ctx.createOscillator(),
+            g = gain(depth);
+          o.frequency.value = freq;
+          o.connect(g);
+          g.connect(target);
+          o.start();
+          return o;
+        };
+        const every = (ch, fn, min, max, first) => {
+          const tick = () => {
+            if (ch.vol > 0.01) fn();
+            setTimeout(tick, rnd(min, max));
+          };
+          setTimeout(tick, first ?? rnd(min, max));
+        };
+        function burst(type, dur, setup) {
+          const t = ctx.currentTime,
+            s = ctx.createBufferSource();
+          s.buffer = noiseBuf(type);
+          const g = gain(0);
+          setup(s, g, t);
+          s.start(t, rnd(0, 6));
+          s.stop(t + dur);
+          return g;
+        }
+
+        // etiquetas: k = warn (amarelo), bad (vermelho), info (azul), mute (cinza)
+        const T = {
+          small: { t: "Evidência pequena (TDAH)", k: "warn" },
+          none: { t: "Sem estudos controlados", k: "bad" },
+          mixed: { t: "Evidência mista", k: "warn" },
+          phones: { t: "🎧 Use fones", k: "info" },
+          synth: { t: "Sintético", k: "mute" },
+          both: { t: "Arquivo ou sintético", k: "mute" },
+          fileOnly: { t: "Só arquivo", k: "mute" },
+        };
+
+        const FAMILIES = [
+          {
+            id: "foco",
+            icon: "🧠",
+            name: "Foco",
+            sub: "Ruídos usados para concentração",
+          },
+          {
+            id: "clima",
+            icon: "🌦️",
+            name: "Clima",
+            sub: "Chuva, trovão e vento",
+          },
+          {
+            id: "natureza",
+            icon: "🌳",
+            name: "Natureza",
+            sub: "Mata, água e bichos",
+          },
+          {
+            id: "ambientes",
+            icon: "🏕️",
+            name: "Ambientes",
+            sub: "Lugares com fogo, água e eco",
+          },
+        ];
+
+        const CHANNELS = [
+          {
+            id: "white",
+            group: "foco",
+            icon: "⚪",
+            name: "Ruído branco",
+            tags: [T.small, T.synth],
+            note: "Todas as frequências com a mesma energia. Chiado.",
+            make: (o) => noise("white", chain(gain(0.35), o)),
+          },
+          {
+            id: "pink",
+            group: "foco",
+            icon: "🌸",
+            name: "Ruído rosa",
+            tags: [T.small, T.synth],
+            note: "Menos agudo que o branco. Parece chuva suave.",
+            make: (o) => noise("pink", chain(gain(0.7), o)),
+          },
+          {
+            id: "brown",
+            group: "foco",
+            icon: "🟤",
+            name: "Ruído marrom",
+            tags: [T.none, T.synth],
+            note: "Grave, como trovão distante ou turbina.",
+            make: (o) => noise("brown", chain(gain(0.9), o)),
+          },
+          {
+            id: "binaural",
+            group: "foco",
+            icon: "🎧",
+            name: "Batida binaural",
+            tags: [T.mixed, T.phones],
+            note: "Um tom em cada ouvido; a diferença entre eles é a batida.",
+            beat: 2,
+            make(o, ch) {
+              const L = ctx.createOscillator(),
+                R = ctx.createOscillator();
+              const pl = ctx.createStereoPanner(),
+                pr = ctx.createStereoPanner();
+              pl.pan.value = -1;
+              pr.pan.value = 1;
+              L.frequency.value = 200;
+              ch.osc = R;
+              R.frequency.value = 200 + BEATS[ch.beat][1];
+              L.connect(pl);
+              R.connect(pr);
+              const g = gain(0.25);
+              pl.connect(g);
+              pr.connect(g);
+              g.connect(o);
+              L.start();
+              R.start();
+            },
+          },
+
+          {
+            id: "rain",
+            group: "clima",
+            icon: "🌧️",
+            name: "Chuva",
+            file: "rain-light",
+            tags: [T.both],
+            make(o) {
+              noise(
+                "white",
+                chain(
+                  filt("highpass", 900),
+                  filt("lowpass", 9000),
+                  gain(0.4),
+                  o,
+                ),
+              );
+              noise("pink", chain(filt("lowpass", 1200), gain(0.35), o));
+            },
+          },
+          {
+            id: "thunder",
+            group: "clima",
+            icon: "⛈️",
+            name: "Trovões",
+            file: "rain-storm",
+            tags: [T.both],
+            note: "Sintético: um estrondo a cada 7–22 s. Arquivo: tempestade com trovão distante.",
+            make(o, ch) {
+              every(
+                ch,
+                () => {
+                  const dur = rnd(4, 8);
+                  burst("brown", dur, (s, g, t) => {
+                    const lp = filt("lowpass", rnd(120, 260));
+                    s.connect(lp);
+                    lp.connect(g);
+                    g.connect(o);
+                    g.gain.setValueAtTime(0.0001, t);
+                    g.gain.linearRampToValueAtTime(
+                      rnd(1.5, 2.8),
+                      t + rnd(0.3, 1),
+                    );
+                    g.gain.exponentialRampToValueAtTime(0.001, t + dur - 0.2);
+                  });
+                },
+                7000,
+                22000,
+                1500,
+              );
+            },
+          },
+          {
+            id: "wind",
+            group: "clima",
+            icon: "💨",
+            name: "Vento",
+            file: "meadow-wind",
+            tags: [T.both],
+            make(o) {
+              const bp = filt("bandpass", 500, 0.6),
+                g = gain(0.8);
+              noise("pink", chain(bp, g, o));
+              lfo(0.07, 250, bp.frequency);
+              lfo(0.11, 0.35, g.gain);
+            },
+          },
+          {
+            id: "winter",
+            group: "clima",
+            recOnly: true,
+            icon: "❄️",
+            name: "Vento de inverno",
+            file: "winter-wind",
+            tags: [T.fileOnly],
+          },
+
+          {
+            id: "forest",
+            group: "natureza",
+            icon: "🌲",
+            name: "Floresta",
+            file: "forest-day",
+            tags: [T.both],
+            note: "Folhas ao vento e pássaros.",
+            make(o, ch) {
+              const leaves = gain(0.15);
+              noise("pink", chain(filt("highpass", 2500), leaves, o));
+              lfo(0.12, 0.1, leaves.gain);
+              every(
+                ch,
+                () => {
+                  const n = Math.floor(rnd(1, 5)),
+                    base = rnd(2500, 5500);
+                  for (let i = 0; i < n; i++)
+                    setTimeout(
+                      () => {
+                        const t = ctx.currentTime,
+                          osc = ctx.createOscillator(),
+                          g = gain(0),
+                          d = rnd(0.08, 0.18);
+                        osc.frequency.setValueAtTime(base, t);
+                        osc.frequency.exponentialRampToValueAtTime(
+                          base * rnd(1.1, 1.4),
+                          t + d,
+                        );
+                        g.gain.linearRampToValueAtTime(0.12, t + 0.02);
+                        g.gain.exponentialRampToValueAtTime(
+                          0.001,
+                          t + d + 0.03,
+                        );
+                        osc.connect(g);
+                        g.connect(o);
+                        osc.start(t);
+                        osc.stop(t + d + 0.05);
+                      },
+                      i * rnd(110, 180),
+                    );
+                },
+                2000,
+                9000,
+                800,
+              );
+            },
+          },
+          {
+            id: "stream",
+            group: "natureza",
+            icon: "💧",
+            name: "Riacho",
+            file: "river-stream",
+            tags: [T.both],
+            make(o) {
+              const g = gain(0.3);
+              noise("white", chain(filt("bandpass", 1800, 0.8), g, o));
+              lfo(0.31, 0.1, g.gain);
+              lfo(0.73, 0.08, g.gain);
+            },
+          },
+          {
+            id: "waves",
+            group: "natureza",
+            icon: "🌊",
+            name: "Ondas",
+            file: "ocean-waves",
+            tags: [T.both],
+            make(o) {
+              const g = gain(0.5);
+              noise("brown", chain(filt("lowpass", 700), g, o));
+              lfo(0.1, 0.45, g.gain);
+            },
+          },
+          {
+            id: "crickets",
+            group: "natureza",
+            icon: "🌙",
+            name: "Grilos",
+            file: "night-crickets",
+            tags: [T.both],
+            make(o) {
+              const osc = ctx.createOscillator();
+              osc.frequency.value = 4300;
+              const am = gain(0),
+                gate = gain(0.5);
+              osc.connect(am);
+              am.connect(gate);
+              gate.connect(o);
+              lfo(26, 0.05, am.gain);
+              const base = ctx.createConstantSource();
+              base.offset.value = 0.05;
+              base.connect(am.gain);
+              base.start();
+              lfo(0.6, 0.5, gate.gain);
+              osc.start();
+            },
+          },
+
+          {
+            id: "fire",
+            group: "ambientes",
+            icon: "🔥",
+            name: "Fogueira",
+            file: "campfire",
+            tags: [T.both],
+            make(o, ch) {
+              noise("brown", chain(filt("lowpass", 350), gain(0.8), o));
+              every(
+                ch,
+                () =>
+                  burst("white", 0.1, (s, g, t) => {
+                    const bp = filt("bandpass", rnd(1500, 5500), 1.2);
+                    s.connect(bp);
+                    bp.connect(g);
+                    g.connect(o);
+                    g.gain.setValueAtTime(rnd(0.2, 0.9), t);
+                    g.gain.exponentialRampToValueAtTime(
+                      0.001,
+                      t + rnd(0.02, 0.09),
+                    );
+                  }),
+                40,
+                380,
+              );
+            },
+          },
+          {
+            id: "fireplace",
+            group: "ambientes",
+            recOnly: true,
+            icon: "🏠",
+            name: "Lareira e relógio",
+            file: "fireplace-room",
+            tags: [T.fileOnly],
+          },
+          {
+            id: "cave",
+            group: "ambientes",
+            recOnly: true,
+            icon: "🕳️",
+            name: "Pingos de caverna",
+            file: "cave-drips",
+            tags: [T.fileOnly],
+          },
+          {
+            id: "fountain",
+            group: "ambientes",
+            recOnly: true,
+            icon: "⛲",
+            name: "Fonte da praça",
+            file: "town-fountain",
+            tags: [T.fileOnly],
+          },
+        ];
+
+        const PRESETS = {
+          foco: { pink: 0.5, brown: 0.3 },
+          chuva: { rain: 0.7, thunder: 0.5, wind: 0.2 },
+          acampamento: { fire: 0.7, crickets: 0.4, wind: 0.15 },
+          floresta: { forest: 0.7, stream: 0.4, wind: 0.2 },
+        };
+
+        // ---------- estado salvo ----------
+        const SAVE = "mixer-sons-config";
+        let saved = {};
+        try {
+          saved = JSON.parse(localStorage.getItem(SAVE)) || {};
+        } catch (e) {}
+        let mode = saved.mode === "synth" ? "synth" : "rec"; // 'rec' = arquivos da pasta sons/
+        const statusEl = document.getElementById("status");
+        const setStatus = (t, kind = "") => {
+          statusEl.textContent = t;
+          statusEl.className = "status " + kind;
+        };
+        // chamado a cada mudança: só avisa que há alterações; quem grava é o botão Salvar
+        const persist = () => setStatus("Alterações não salvas", "dirty");
+        const snapshot = () => ({
+          mode,
+          master: masterVal,
+          vols: Object.fromEntries(CHANNELS.map((c) => [c.id, c.vol])),
+          beat: CHANNELS.find((c) => c.id === "binaural").beat,
+        });
+        function saveConfig() {
+          try {
+            localStorage.setItem(SAVE, JSON.stringify(snapshot()));
+            setStatus(
+              "Config salva às " +
+                new Date().toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+              "ok",
+            );
+          } catch (e) {
+            setStatus("Não consegui salvar (armazenamento bloqueado)", "dirty");
+          }
+        }
+        function loadConfig() {
+          let cfg;
+          try {
+            cfg = JSON.parse(localStorage.getItem(SAVE));
+          } catch (e) {}
+          if (!cfg) {
+            setStatus("Nenhuma config salva ainda");
+            return;
+          }
+          init();
+          setMaster(cfg.master ?? masterVal);
+          const bin = CHANNELS.find((c) => c.id === "binaural");
+          if (cfg.beat != null && BEATS[cfg.beat]) setBeat(bin, cfg.beat);
+          setMode(cfg.mode === "synth" ? "synth" : "rec");
+          CHANNELS.forEach((c) => setVol(c, (cfg.vols && cfg.vols[c.id]) || 0));
+          setStatus("Config carregada", "ok");
+        }
+
+        // ---------- áudio ----------
+        function init() {
+          if (ctx) {
+            if (ctx.state === "suspended") ctx.resume();
+            return;
+          }
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          master = gain(masterVal * masterVal);
+          const comp = ctx.createDynamicsCompressor();
+          master.connect(comp);
+          comp.connect(ctx.destination);
+          CHANNELS.forEach((c) => applyVol(c));
+        }
+        function applyVol(ch) {
+          const useFile = ch.file && (mode === "rec" || ch.recOnly);
+          // arquivos: <audio loop>, funciona também abrindo o HTML direto do disco
+          if (useFile && ch.vol > 0) {
+            if (!ch.audio) {
+              ch.audio = new Audio(`sons/${ch.file}.ogg`);
+              ch.audio.loop = true;
+            }
+            ch.audio.volume = Math.min(
+              1,
+              ch.vol * ch.vol * masterVal * masterVal,
+            );
+            if (ch.audio.paused) ch.audio.play().catch(() => {}); // pode falhar antes do 1º clique
+          } else if (ch.audio) ch.audio.pause();
+          // sintetizado: Web Audio
+          if (!ctx || ch.recOnly) return;
+          if (ch.vol > 0 && !useFile && !ch.node) {
+            ch.node = gain(0);
+            ch.node.connect(master);
+            ch.make(ch.node, ch);
+          }
+          if (ch.node)
+            ch.node.gain.setTargetAtTime(
+              useFile ? 0 : ch.vol * ch.vol,
+              ctx.currentTime,
+              0.05,
+            );
+        }
+        function setMode(m) {
+          mode = m;
+          document
+            .querySelectorAll("[data-mode]")
+            .forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
+          CHANNELS.forEach((c) => {
+            if (c.recOnly) c.card.classList.toggle("hide", m !== "rec");
+          });
+          CHANNELS.forEach(applyVol);
+          updateCounts();
+        }
+        function setMaster(v) {
+          masterVal = +v;
+          masterEl.value = masterVal;
+          masterEl.style.setProperty("--p", masterVal * 100 + "%");
+          document.getElementById("mv").textContent =
+            Math.round(masterVal * 100) + "%";
+          if (master)
+            master.gain.setTargetAtTime(
+              masterVal * masterVal,
+              ctx.currentTime,
+              0.05,
+            );
+          CHANNELS.forEach((c) => {
+            if (c.audio)
+              c.audio.volume = Math.min(
+                1,
+                c.vol * c.vol * masterVal * masterVal,
+              );
+          });
+        }
+        function setBeat(ch, i) {
+          ch.beat = i;
+          [...ch.beatRow.children].forEach((x, j) =>
+            x.classList.toggle("sel", j === i),
+          );
+          if (ch.osc)
+            ch.osc.frequency.setTargetAtTime(
+              200 + BEATS[i][1],
+              ctx.currentTime,
+              0.1,
+            );
+        }
+
+        // ---------- interface ----------
+        function updateCounts() {
+          FAMILIES.forEach((f) => {
+            const n = CHANNELS.filter(
+              (c) =>
+                c.group === f.id && c.vol > 0 && !(c.recOnly && mode !== "rec"),
+            ).length;
+            f.countEl.textContent = n
+              ? `${n} ativo${n > 1 ? "s" : ""}`
+              : "nenhum ativo";
+            f.countEl.classList.toggle("has", n > 0);
+          });
+        }
+        function setVol(ch, v) {
+          ch.vol = +v;
+          ch.slider.value = v;
+          ch.slider.style.setProperty("--p", ch.vol * 100 + "%");
+          ch.card.classList.toggle("on", ch.vol > 0);
+          ch.label.textContent = Math.round(ch.vol * 100) + "%";
+          applyVol(ch);
+          updateCounts();
+        }
+
+        const famRoot = document.getElementById("families");
+        FAMILIES.forEach((f) => {
+          const sec = document.createElement("section");
+          sec.className = "family";
+          sec.innerHTML = `<div class="fhead"><div class="fic">${f.icon}</div>
+      <div><h2>${f.name}</h2><div class="fsub">${f.sub}</div></div><span class="count"></span></div><div class="grid"></div>`;
+          f.countEl = sec.querySelector(".count");
+          f.grid = sec.querySelector(".grid");
+          famRoot.append(sec);
+        });
+
+        const masterEl = document.getElementById("master");
+
+        CHANNELS.forEach((ch) => {
+          ch.vol = (saved.vols && saved.vols[ch.id]) || 0;
+          if (ch.id === "binaural" && saved.beat != null && BEATS[saved.beat])
+            ch.beat = saved.beat;
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `<div class="ic">${ch.icon}</div><div class="body">
+      <div class="row1"><span class="name">${ch.name}</span><span class="val"></span></div>
+      <div class="tags">${(ch.tags || []).map((t) => `<span class="tag ${t.k}">${t.t}</span>`).join("")}</div>
+      <input type="range" min="0" max="1" step="0.01" value="0" aria-label="${ch.name}"></div>`;
+          const body = card.querySelector(".body");
+          if (ch.note) {
+            const n = document.createElement("div");
+            n.className = "note";
+            n.textContent = ch.note;
+            body.append(n);
+          }
+          if (ch.id === "binaural") {
+            const row = document.createElement("div");
+            row.className = "beats";
+            ch.beatRow = row;
+            BEATS.forEach(([name, hz], i) => {
+              const b = document.createElement("button");
+              b.textContent = `${name} ${hz} Hz`;
+              b.className = i === ch.beat ? "sel" : "";
+              b.onclick = () => {
+                init();
+                setBeat(ch, i);
+                persist();
+              };
+              row.append(b);
+            });
+            body.append(row);
+          }
+          ch.card = card;
+          ch.slider = card.querySelector("input");
+          ch.label = card.querySelector(".val");
+          ch.slider.addEventListener("input", () => {
+            init();
+            setVol(ch, ch.slider.value);
+            persist();
+          });
+          FAMILIES.find((f) => f.id === ch.group).grid.append(card);
+          setVol(ch, ch.vol);
+        });
+
+        setMaster(saved.master != null ? saved.master : masterVal);
+        masterEl.addEventListener("input", () => {
+          init();
+          setMaster(masterEl.value);
+          persist();
+        });
+        document.querySelectorAll("[data-mode]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              init();
+              setMode(b.dataset.mode);
+              persist();
+            }),
+        );
+        document.getElementById("stop").onclick = () => {
+          CHANNELS.forEach((c) => setVol(c, 0));
+          persist();
+        };
+        document.querySelectorAll("[data-preset]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              init();
+              const p = PRESETS[b.dataset.preset];
+              CHANNELS.forEach((c) => setVol(c, p[c.id] || 0));
+              persist();
+            }),
+        );
+        document.getElementById("save").onclick = saveConfig;
+        document.getElementById("load").onclick = loadConfig;
+        setMode(mode);
+        // sem a pasta sons/ (ex.: na versão publicada, que não leva os arquivos) só existe o modo sintetizado
+        const sonda = new Audio();
+        sonda.preload = "metadata";
+        sonda.addEventListener(
+          "error",
+          () => {
+            document.querySelector("[data-mode]").closest(".group").classList.add("hide");
+            document.querySelector("footer").classList.add("hide");
+            setMode("synth");
+          },
+          { once: true },
+        );
+        sonda.src = "sons/rain-light.ogg";
+        if (saved.vols)
+          setStatus(
+            "Config salva carregada (o som começa no primeiro clique)",
+            "ok",
+          );
+        // o navegador só libera áudio depois de um gesto: ao primeiro clique, religa o que estava salvo
+        addEventListener("pointerdown", init, { once: true });
+      })();
+    </script>
+  </body>
+</html>

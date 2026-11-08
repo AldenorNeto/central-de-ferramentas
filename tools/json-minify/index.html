@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>JSON Minify</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Cpath d='M24 16c-6 0-6 4-6 8s0 6-4 8c4 2 4 4 4 8s0 8 6 8M40 16c6 0 6 4 6 8s0 6 4 8c-4 2-4 4-4 8s0 8-6 8' fill='none' stroke='%23818cf8' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root { color-scheme: dark; accent-color: #818cf8; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #0b1120; color: #e2e8f0; margin: 0; padding: 24px; }
+  main { max-width: 1000px; margin: 0 auto; }
+  .voltar { display: inline-block; margin: 0 0 14px; font-size: 13px; color: #a5b4fc; text-decoration: none; }
+  .voltar:hover { text-decoration: underline; }
+  h1 { font-size: 22px; margin: 0 0 16px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #8b9bb8; display: block; margin-bottom: 6px; }
+  textarea {
+    width: 100%; height: 340px; padding: 10px; resize: vertical; font: 13px/1.5 ui-monospace, Consolas, monospace;
+    border: 1px solid #26334f; border-radius: 8px; background: #111a2e; color: #f8fafc;
+  }
+  textarea.erro { border-color: #f87171; }
+  .acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  button, select { font: inherit; font-size: 13px; padding: 8px 12px; border-radius: 8px; border: 1px solid #26334f; background: #111a2e; color: #e2e8f0; cursor: pointer; }
+  button:hover { background: #172036; }
+  button.on { background: #818cf8; border-color: #818cf8; color: #0b1120; font-weight: 600; }
+  #msg { font-size: 13px; color: #8b9bb8; }
+  #msg.erro { color: #f87171; }
+  #msg.ok { color: #34d399; }
+</style>
+</head>
+<body>
+<main>
+  <a class="voltar" href="../../">← Central de ferramentas</a>
+  <h1>📦 JSON Minify</h1>
+
+  <div class="acoes">
+    <button id="min" class="on">Minificar</button>
+    <button id="fmt">Formatar</button>
+    <select id="ind" aria-label="Indentação"><option value="2">2 espaços</option><option value="4">4 espaços</option><option value="t">tab</option></select>
+    <button id="copiar">Copiar resultado</button>
+    <button id="limpar">Limpar</button>
+    <span id="msg"></span>
+  </div>
+
+  <div class="cols">
+    <div><label for="ent">Entrada</label><textarea id="ent" spellcheck="false" placeholder='{ "exemplo": [1, 2, 3] }'></textarea></div>
+    <div><label for="sai">Resultado</label><textarea id="sai" spellcheck="false" readonly></textarea></div>
+  </div>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let modo = 'min';
+  const bytes = s => new TextEncoder().encode(s).length;
+
+  function posicaoDoErro(texto, e) {
+    const m = /position (\d+)/.exec(e.message);
+    if (!m) return '';
+    const pos = +m[1], antes = texto.slice(0, pos).split('\n');
+    return ` (linha ${antes.length}, coluna ${antes[antes.length - 1].length + 1})`;
+  }
+
+  function rodar() {
+    const texto = $('ent').value;
+    $('ent').classList.remove('erro'); $('msg').className = '';
+    if (!texto.trim()) { $('sai').value = ''; $('msg').textContent = ''; return; }
+    try {
+      const obj = JSON.parse(texto);
+      const ind = $('ind').value === 't' ? '\t' : +$('ind').value;
+      const saida = modo === 'min' ? JSON.stringify(obj) : JSON.stringify(obj, null, ind);
+      $('sai').value = saida;
+      const a = bytes(texto), b = bytes(saida), pct = a ? Math.round((1 - b / a) * 100) : 0;
+      $('msg').className = 'ok';
+      $('msg').textContent = `JSON válido · ${a} → ${b} bytes (${pct >= 0 ? '−' + pct : '+' + -pct}%)`;
+    } catch (e) {
+      $('ent').classList.add('erro'); $('sai').value = '';
+      $('msg').className = 'erro'; $('msg').textContent = 'JSON inválido: ' + e.message + posicaoDoErro(texto, e);
+    }
+  }
+
+  function definirModo(m) { modo = m; $('min').classList.toggle('on', m === 'min'); $('fmt').classList.toggle('on', m === 'fmt'); rodar(); }
+  $('min').onclick = () => definirModo('min');
+  $('fmt').onclick = () => definirModo('fmt');
+  $('ind').onchange = () => { if (modo === 'fmt') rodar(); else definirModo('fmt'); };
+  $('ent').addEventListener('input', rodar);
+  $('limpar').onclick = () => { $('ent').value = ''; rodar(); $('ent').focus(); };
+  $('copiar').onclick = async () => {
+    if (!$('sai').value) return;
+    try { await navigator.clipboard.writeText($('sai').value); $('msg').className = 'ok'; $('msg').textContent = 'Copiado'; }
+    catch (e) { $('sai').select(); $('msg').textContent = 'Não consegui copiar; o texto está selecionado, use Ctrl+C'; }
+  };
+</script>
+</body>
+</html>

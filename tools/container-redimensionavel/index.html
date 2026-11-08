@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Container redimensionável</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Crect x='14' y='18' width='36' height='28' rx='4' fill='none' stroke='%23818cf8' stroke-width='5'/%3E%3Cpath d='M40 40l8 8' stroke='%23f8fafc' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+
+    <style>
+      :root {
+        color-scheme: dark;
+        accent-color: #818cf8;
+      }
+      body {
+        font-family: system-ui, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        margin: 0;
+        padding: 24px;
+      }
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 520px;
+        margin-bottom: 20px;
+      }
+      label {
+        font-size: 14px;
+        color: #94a3b8;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      textarea {
+        font: inherit;
+        padding: 8px;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        background: #1e293b;
+        color: #f8fafc;
+        min-height: 80px;
+        resize: vertical;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .row input[type="range"] {
+        flex: 1;
+      }
+      .row input[type="number"] {
+        width: 70px;
+        padding: 6px;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        background: #1e293b;
+        color: #f8fafc;
+        font: inherit;
+      }
+      .box {
+        width: 360px;
+        height: 220px;
+        min-width: 120px;
+        min-height: 80px;
+        resize: both;
+        overflow: auto;
+        background: #1e293b;
+        color: #f8fafc;
+        border: 2px solid #818cf8;
+        border-radius: 8px;
+        padding: 16px;
+        line-height: 1.5;
+        box-sizing: border-box;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 16px;
+      }
+      #size {
+        margin-top: 12px;
+        color: #94a3b8;
+        font-size: 14px;
+      }
+      .voltar { display: inline-block; margin: 0 0 14px; font: 13px system-ui, sans-serif; color: #a5b4fc; text-decoration: none; }
+  .voltar:hover { text-decoration: underline; }
+</style>
+  </head>
+  <body>
+<a class="voltar" href="../../">← Central de ferramentas</a>
+
+    <div class="controls">
+      <label
+        >Texto
+        <textarea id="text">
+Arraste o canto inferior direito deste container para redimensioná-lo. O texto se ajusta conforme a largura e a altura mudam. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</textarea
+        >
+      </label>
+      <label
+        >Tamanho da fonte (px)
+        <div class="row">
+          <input type="range" id="fsRange" min="8" max="96" value="16" />
+          <input type="number" id="fsNum" min="1" max="300" value="16" />
+        </div>
+      </label>
+    </div>
+
+    <div class="box" id="box"></div>
+    <div id="size"></div>
+
+    <script>
+      const box = document.getElementById("box"),
+        out = document.getElementById("size");
+      const text = document.getElementById("text");
+      const range = document.getElementById("fsRange"),
+        num = document.getElementById("fsNum");
+
+      const setText = () => (box.textContent = text.value);
+      const setFont = (v) => {
+        box.style.fontSize = v + "px";
+        range.value = v;
+        num.value = v;
+      };
+
+      text.addEventListener("input", setText);
+      range.addEventListener("input", () => setFont(range.value));
+      num.addEventListener("input", () => {
+        if (num.value > 0) setFont(num.value);
+      });
+
+      const show = () =>
+        (out.textContent = `${Math.round(box.offsetWidth)} × ${Math.round(box.offsetHeight)} px`);
+      new ResizeObserver(show).observe(box);
+
+      setText();
+      setFont(16);
+      show();
+    </script>
+  </body>
+</html>

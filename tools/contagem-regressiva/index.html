@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Contagem regressiva</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Ccircle cx='32' cy='34' r='18' fill='none' stroke='%23818cf8' stroke-width='5'/%3E%3Cpath d='M32 34V24M26 10h12' stroke='%23f8fafc' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root { color-scheme: dark; accent-color: #818cf8; }
+  body { font-family: system-ui, sans-serif; background: #0b1120; color: #e2e8f0; margin: 0; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .voltar { align-self: flex-start; font-size: 13px; color: #a5b4fc; text-decoration: none; }
+  .voltar:hover { text-decoration: underline; }
+  .inputs { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; justify-content: center; }
+  label { font-size: 13px; color: #8b9bb8; display: flex; flex-direction: column; gap: 4px; }
+  input[type=number] { width: 90px; padding: 8px; font: inherit; font-size: 18px; border: 1px solid #26334f; border-radius: 8px; background: #111a2e; color: #f8fafc; }
+  button { font: inherit; padding: 10px 16px; border: 1px solid #26334f; border-radius: 8px; cursor: pointer; background: #111a2e; color: #e2e8f0; }
+  button:hover { background: #172036; }
+  button.primary { background: #818cf8; border-color: #818cf8; color: #0b1120; font-weight: 600; }
+  #tempo { font-size: clamp(48px, 16vw, 120px); font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: 2px; }
+  #tempo.fim { color: #f87171; }
+  #status { color: #8b9bb8; min-height: 1.2em; }
+</style>
+</head>
+<body>
+  <a class="voltar" href="../../">← Central de ferramentas</a>
+  <div class="inputs">
+    <label>Horas <input type="number" id="h" min="0" value="0"></label>
+    <label>Minutos <input type="number" id="m" min="0" value="25"></label>
+    <label>Segundos <input type="number" id="s" min="0" value="0"></label>
+    <button id="iniciar" class="primary">Iniciar</button>
+    <button id="pausar">Pausar</button>
+    <button id="zerar">Zerar</button>
+  </div>
+  <div id="tempo">00:25:00</div>
+  <div id="status"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let restante = 0, fimEm = 0, relogio = null;
+
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = ms => { const s = Math.ceil(ms / 1000); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`; };
+  const doCampo = () => (((+$('h').value || 0) * 60 + (+$('m').value || 0)) * 60 + (+$('s').value || 0)) * 1000;
+
+  function desenhar() {
+    $('tempo').textContent = fmt(restante);
+    document.title = relogio ? fmt(restante) + ' – Contagem regressiva' : 'Contagem regressiva';
+  }
+  const parar = () => { clearInterval(relogio); relogio = null; };
+
+  function apito() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator(); o.frequency.value = 880; o.connect(ctx.destination);
+      o.start(); setTimeout(() => { o.stop(); ctx.close(); }, 700);
+    } catch (e) { /* sem áudio: o aviso visual basta */ }
+  }
+
+  function passo() {
+    restante = Math.max(0, fimEm - Date.now());
+    desenhar();
+    if (restante === 0) { parar(); $('tempo').classList.add('fim'); $('status').textContent = 'Tempo esgotado!'; apito(); }
+  }
+
+  $('iniciar').onclick = () => {
+    if (relogio) return;
+    if (!restante) restante = doCampo();
+    if (!restante) return;
+    $('tempo').classList.remove('fim'); $('status').textContent = '';
+    fimEm = Date.now() + restante;
+    relogio = setInterval(passo, 200); passo();
+  };
+  $('pausar').onclick = () => { if (relogio) { parar(); $('status').textContent = 'Pausado'; desenhar(); } };
+  $('zerar').onclick = () => { parar(); restante = doCampo(); $('tempo').classList.remove('fim'); $('status').textContent = ''; desenhar(); };
+  ['h', 'm', 's'].forEach(id => $(id).addEventListener('input', () => { if (!relogio) { restante = doCampo(); desenhar(); } }));
+
+  restante = doCampo(); desenhar();
+</script>
+</body>
+</html>

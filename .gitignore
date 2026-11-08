@@ -1,0 +1,6 @@
+# arquivos de áudio de terceiros (licença não permite redistribuir)
+tools/mixer-de-sons/sons/
+
+# segredos nunca entram aqui
+.env
+.env.*
