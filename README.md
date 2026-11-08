@@ -12,7 +12,7 @@ Publicado em: https://aldenorneto.github.io/central-de-ferramentas/
 | `diferenca-horarios` | Duração entre horários (HH:MM), vários intervalos e total em minutos |
 | `contagem-regressiva` | Contagem regressiva em horas, minutos e segundos |
 | `container-redimensionavel` | Texto num container que se redimensiona, com fonte ajustável |
-| `json-minify` | Minifica e formata JSON, mostrando o erro |
+| `json-minify` | Cola o JSON formatado e devolve em uma linha só, com botão de copiar |
 | `contador-de-texto` | Caracteres, palavras, linhas, parágrafos e tempo de leitura |
 
 ## Adicionar uma ferramenta
