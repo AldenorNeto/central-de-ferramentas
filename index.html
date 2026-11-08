@@ -25,7 +25,9 @@
   .rodape a { color: var(--muted); text-decoration: none; }
   .rodape a:hover { color: var(--text); }
 
+  #quadros { height: 100%; min-height: 0; min-width: 0; }
   iframe { width: 100%; height: 100%; border: 0; background: var(--bg); display: block; }
+  iframe[hidden] { display: none; }
 
   @media (max-width: 720px) {
     .casca { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
@@ -46,13 +48,13 @@
     <ul class="lista" id="lista"></ul>
     <div class="rodape"><a href="https://github.com/AldenorNeto/central-de-ferramentas" target="_blank" rel="noopener">Código</a></div>
   </nav>
-  <iframe id="quadro" title="Ferramenta"></iframe>
+  <div id="quadros"></div>
 </div>
 
 <script src="ferramentas.js"></script>
 <script src="icones.js"></script>
 <script>
-  const lista = document.getElementById('lista'), quadro = document.getElementById('quadro');
+  const lista = document.getElementById('lista'), quadros = document.getElementById('quadros');
   const guardar = { ler() { try { return localStorage.getItem('cf:ultima'); } catch (e) { return null; } },
                     gravar(v) { try { localStorage.setItem('cf:ultima', v); } catch (e) {} } };
 
@@ -71,8 +73,15 @@
       if (a.dataset.id === alvo.id) { a.setAttribute('aria-current', 'page'); a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
       else a.removeAttribute('aria-current');
     });
-    const url = 'tools/' + alvo.id + '/';
-    if (!quadro.src.endsWith(url)) quadro.src = url;
+    // Cada ferramenta ganha seu quadro na primeira visita e continua viva, só escondida:
+    // assim o mixer segue tocando enquanto você usa as outras.
+    let q = quadros.querySelector('[data-id="' + alvo.id + '"]');
+    if (!q) {
+      q = document.createElement('iframe');
+      q.dataset.id = alvo.id; q.title = alvo.nome; q.src = 'tools/' + alvo.id + '/';
+      quadros.append(q);
+    }
+    quadros.querySelectorAll('iframe').forEach(f => { f.hidden = f !== q; });
     document.title = alvo.nome + ' · Central de ferramentas';
     guardar.gravar(alvo.id);
     if (pedida !== alvo.id) history.replaceState(null, '', '#' + alvo.id);

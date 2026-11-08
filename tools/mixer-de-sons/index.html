@@ -309,12 +309,26 @@
           o.start();
           return o;
         };
+        // Timer num Worker: o navegador não o estrangula quando a aba fica em segundo plano
+        const esperar = (() => {
+          try {
+            const w = new Worker(URL.createObjectURL(new Blob(
+              ["onmessage=e=>{const d=e.data;setTimeout(()=>postMessage(d.id),d.ms)}"],
+              { type: "text/javascript" })));
+            const cbs = new Map();
+            let n = 0;
+            w.onmessage = (e) => { const f = cbs.get(e.data); cbs.delete(e.data); if (f) f(); };
+            return (fn, ms) => { const id = ++n; cbs.set(id, fn); w.postMessage({ id, ms }); };
+          } catch (e) {
+            return (fn, ms) => setTimeout(fn, ms);
+          }
+        })();
         const every = (ch, fn, min, max, first) => {
           const tick = () => {
             if (ch.vol > 0.01) fn();
-            setTimeout(tick, rnd(min, max));
+            esperar(tick, rnd(min, max));
           };
-          setTimeout(tick, first ?? rnd(min, max));
+          esperar(tick, first ?? rnd(min, max));
         };
         function burst(type, dur, setup) {
           const t = ctx.currentTime,
@@ -718,7 +732,14 @@
             if (ctx.state === "suspended") ctx.resume();
             return;
           }
-          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "playback" });
+          // se o navegador suspender o áudio (aba em segundo plano, troca de fone), religa sozinho
+          const religar = () => {
+            if (ctx.state !== "running" && CHANNELS.some((c) => c.vol > 0)) ctx.resume().catch(() => {});
+          };
+          ctx.addEventListener("statechange", religar);
+          document.addEventListener("visibilitychange", religar);
+          setInterval(religar, 2000);
           master = gain(masterVal * masterVal);
           const comp = ctx.createDynamicsCompressor();
           master.connect(comp);

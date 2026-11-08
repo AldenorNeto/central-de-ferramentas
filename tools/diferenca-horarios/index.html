@@ -124,9 +124,10 @@ input.bad { border-color: var(--bad); }
       rowsEl.addEventListener("click", (e) => {
         const row = e.target.closest(".row");
         if (!row) return;
-        if (e.target.classList.contains("add"))
+        const btn = e.target.closest("button");
+        if (btn && btn.classList.contains("add"))
           addRow(row).querySelector("input").focus();
-        if (e.target.classList.contains("del")) {
+        if (btn && btn.classList.contains("del")) {
           if (rowsEl.children.length > 1) row.remove();
           else row.querySelectorAll("input").forEach((i) => (i.value = ""));
           calc();
