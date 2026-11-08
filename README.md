@@ -1,6 +1,6 @@
 # Central de ferramentas
 
-Ferramentas pequenas que rodam direto no navegador, sem instalar nada e sem servidor. Cada uma é uma página HTML autossuficiente em `tools/<nome>/index.html`, e a página inicial (`index.html`) lista todas.
+Ferramentas pequenas que rodam direto no navegador, sem instalar nada e sem servidor. Cada uma é uma página HTML autossuficiente em `tools/<nome>/index.html`, e a página inicial (`index.html`) é um menu lateral que abre cada uma ao lado. O visual comum fica em `tema.css`.
 
 Publicado em: https://aldenorneto.github.io/central-de-ferramentas/
 
@@ -17,9 +17,10 @@ Publicado em: https://aldenorneto.github.io/central-de-ferramentas/
 
 ## Adicionar uma ferramenta
 
-1. Crie `tools/<id>/index.html`, com tudo inline (CSS e JS) e um link `<a href="../../">← Central de ferramentas</a>`.
-2. Acrescente uma linha ao array `FERRAMENTAS` em `ferramentas.js` (usado pelo hub e por `/tools/`).
-3. Faça commit e push; o GitHub Pages publica sozinho.
+1. Crie `tools/<id>/index.html`, carregando `../../tema.css`.
+2. Acrescente uma linha ao array `FERRAMENTAS` em `ferramentas.js` (o menu lateral lê dele).
+3. Crie o ícone em `icones.js` (chave igual ao `id`).
+4. Faça commit e push; o GitHub Pages publica sozinho.
 
 ## Ferramentas que usam chave de API
 

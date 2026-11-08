@@ -1,133 +1,42 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
-    <title>Diferença entre horários</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%231e293b' stroke='%23818cf8' stroke-width='5'/%3E%3Cpath d='M32 16v16l11 7' fill='none' stroke='%23f8fafc' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
-    />
-    <style>
-      :root {
-        color-scheme: dark;
-        accent-color: #818cf8;
-      }
-      body {
-        font-family: system-ui, sans-serif;
-        background: #0f172a;
-        color: #e2e8f0;
-        margin: 0;
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-      }
-      .head,
-      .row {
-        display: grid;
-        grid-template-columns: 110px 110px 150px 40px 40px;
-        gap: 10px;
-        align-items: center;
-      }
-      .head {
-        font-size: 13px;
-        color: #94a3b8;
-      }
-      #rows {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-      input[type="text"] {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 10px;
-        font: inherit;
-        font-size: 22px;
-        text-align: center;
-        border: 1px solid #334155;
-        border-radius: 6px;
-        background: #1e293b;
-        color: #f8fafc;
-        font-variant-numeric: tabular-nums;
-      }
-      input.bad {
-        border-color: #f87171;
-      }
-      .res {
-        font-size: 16px;
-        color: #cbd5e1;
-        font-variant-numeric: tabular-nums;
-        line-height: 1.2;
-      }
-      .res small {
-        display: block;
-        color: #94a3b8;
-        font-size: 12px;
-      }
-      button {
-        height: 40px;
-        border: 0;
-        border-radius: 6px;
-        cursor: pointer;
-        font: inherit;
-        font-size: 20px;
-        font-weight: 700;
-      }
-      .add {
-        background: #818cf8;
-        color: #0f172a;
-      }
-      .del {
-        background: #334155;
-        color: #e2e8f0;
-      }
-      .total {
-        border-top: 1px solid #334155;
-        padding-top: 16px;
-        text-align: center;
-      }
-      #totalMin {
-        font-size: clamp(44px, 14vw, 96px);
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-      }
-      #totalHm {
-        font-size: 22px;
-        color: #cbd5e1;
-      }
-      #note {
-        color: #94a3b8;
-        font-size: 13px;
-      }
-      .voltar { display: inline-block; margin: 0 0 14px; font: 13px system-ui, sans-serif; color: #a5b4fc; text-decoration: none; }
-  .voltar:hover { text-decoration: underline; }
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Diferença entre horários</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23131516'/%3E%3Cpath d='M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5.5l3.5 2' fill='none' stroke='%23d4a24c' stroke-width='1.8' stroke-linecap='square' transform='translate%283 3%29 scale%28.75%29'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../tema.css">
+<style>
+.row { display: grid; grid-template-columns: minmax(0, 110px) minmax(0, 110px) minmax(80px, 150px) 40px 40px; gap: 10px; align-items: center; }
+.cab { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+#rows { display: flex; flex-direction: column; gap: 10px; }
+input[type=text] { width: 100%; padding-inline: 4px; text-align: center; font: 600 20px var(--mono); font-variant-numeric: tabular-nums; }
+input.bad { border-color: var(--bad); }
+.res { font-variant-numeric: tabular-nums; line-height: 1.25; }
+.res small { display: block; color: var(--muted); font-size: 12px; }
+.row button { width: 40px; height: 40px; justify-content: center; padding: 0; }
+.total { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+#totalMin { font: 600 clamp(44px, 13vw, 88px)/1 var(--mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+#totalHm { margin-top: 6px; font-size: 20px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .row { gap: 6px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(70px, 1fr) 34px 34px; } .row button { width: 34px; } input[type=text] { font-size: 17px; } }
+#note { margin-top: 18px; color: var(--muted); font-size: 13px; max-width: 520px; }
 </style>
-  </head>
-  <body>
-<a class="voltar" href="../../">← Central de ferramentas</a>
+</head>
+<body>
+<main>
+  <h1>Diferença entre horários</h1>
+  <div class="cab"><div class="row"><span>De</span><span>Até</span><span>Duração</span><span></span><span></span></div></div>
+  <div id="rows"></div>
+  <div class="total">
+    <div id="totalMin">0 min</div>
+    <div id="totalHm">0h 00min</div>
+  </div>
+  <div id="note">Formato HH:MM, 24 horas. Se o fim for menor que o início, conta como dia seguinte.</div>
+</main>
 
-    <div>
-      <div class="head">
-        <span>De</span><span>Até</span><span>Duração</span><span></span
-        ><span></span>
-      </div>
-      <div id="rows"></div>
-    </div>
-
-    <div class="total">
-      <div id="totalMin">0 min</div>
-      <div id="totalHm">0h 00min</div>
-    </div>
-    <div id="note">
-      Formato HH:MM (24h). Se o fim for menor que o início, conta como dia
-      seguinte.
-    </div>
-
-    <script>
+<script src="../../icones.js"></script>
+<script>
       const rowsEl = document.getElementById("rows");
       const VALID = /^([01]\d|2[0-3]):[0-5]\d$/;
       const toMin = (v) => {
@@ -160,11 +69,11 @@
         res.className = "res";
         const add = document.createElement("button");
         add.className = "add";
-        add.textContent = "+";
+        add.innerHTML = icone("mais");
         add.title = "Adicionar intervalo";
         const del = document.createElement("button");
         del.className = "del";
-        del.textContent = "×";
+        del.innerHTML = icone("fechar");
         del.title = "Remover";
         row.append(makeInput(a), makeInput(b), res, add, del);
         afterRow ? afterRow.after(row) : rowsEl.append(row);
@@ -227,5 +136,5 @@
       addRow(null, "21:48", "23:31");
       calc();
     </script>
-  </body>
+</body>
 </html>

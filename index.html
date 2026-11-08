@@ -5,101 +5,80 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Central de ferramentas</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Cg fill='%23818cf8'%3E%3Crect x='14' y='14' width='16' height='16' rx='3'/%3E%3Crect x='34' y='14' width='16' height='16' rx='3'/%3E%3Crect x='14' y='34' width='16' height='16' rx='3'/%3E%3Crect x='34' y='34' width='16' height='16' rx='3' fill='%23f8fafc'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23131516'/%3E%3Cpath d='M7 7h7v7H7zM18 7h7v7h-7zM7 18h7v7H7z' fill='none' stroke='%23d4a24c' stroke-width='2'/%3E%3Cpath d='M18 18h7v7h-7z' fill='%23d4a24c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="tema.css">
 <style>
-  :root {
-    color-scheme: dark; accent-color: #818cf8;
-    --bg: #0b1120; --panel: #111a2e; --card: #172036; --line: #26334f;
-    --text: #e2e8f0; --muted: #8b9bb8; --accent: #818cf8; --accent-2: #a5b4fc;
+  html, body { height: 100%; overflow: hidden; }
+  .casca { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
+
+  nav { min-width: 0; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--line); min-height: 0; }
+  .marca { padding: 20px 18px 14px; font-weight: 600; letter-spacing: .01em; }
+  .lista { list-style: none; margin: 0; padding: 4px 8px; overflow-y: auto; flex: 1; }
+  .lista a {
+    display: flex; align-items: center; gap: 12px; padding: 9px 10px; margin-bottom: 1px;
+    color: var(--muted); text-decoration: none; font-size: 14px; border-left: 2px solid transparent;
   }
-  * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); margin: 0; }
-  main { max-width: 1000px; margin: 0 auto; padding: 32px 20px 56px; }
-  h1 { font-size: 28px; margin: 0; }
-  header p { color: var(--muted); margin: 6px 0 0; }
-  .bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 24px 0 18px; }
-  input[type=search] {
-    flex: 1; min-width: 200px; padding: 10px 12px; font: inherit; border-radius: 8px;
-    border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  .lista a:hover { color: var(--text); background: var(--raised); }
+  .lista a[aria-current="page"] { color: var(--text); background: var(--raised); border-left-color: var(--accent); }
+  .lista a[aria-current="page"] svg { color: var(--accent); }
+  .rodape { padding: 12px 18px; border-top: 1px solid var(--line); font-size: 12px; }
+  .rodape a { color: var(--muted); text-decoration: none; }
+  .rodape a:hover { color: var(--text); }
+
+  iframe { width: 100%; height: 100%; border: 0; background: var(--bg); display: block; }
+
+  @media (max-width: 720px) {
+    .casca { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+    nav { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); }
+    .marca, .rodape { display: none; }
+    .lista { display: flex; overflow-x: auto; overflow-y: hidden; padding: 0; scrollbar-width: none; }
+    .lista::-webkit-scrollbar { display: none; }
+    .lista li { flex: none; }
+    .lista a { margin: 0; padding: 12px 14px; border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .lista a[aria-current="page"] { background: transparent; border-bottom-color: var(--accent); }
   }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { font: inherit; font-size: 13px; padding: 6px 11px; border-radius: 99px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--muted); }
-  .chip:hover { color: var(--text); }
-  .chip.on { background: var(--accent); border-color: var(--accent); color: #0b1120; font-weight: 600; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-  a.card {
-    display: flex; gap: 14px; padding: 16px; border-radius: 12px; text-decoration: none; color: inherit;
-    background: var(--card); border: 1px solid var(--line); transition: border-color .15s, transform .15s;
-  }
-  a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .ic { flex: none; width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 26px; background: var(--panel); }
-  .body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-  .name { font-weight: 600; font-size: 16px; }
-  .desc { font-size: 13px; color: var(--muted); line-height: 1.45; }
-  .tags { display: flex; flex-wrap: wrap; gap: 4px; }
-  .tag { font-size: 11px; padding: 3px 8px; border-radius: 99px; background: var(--panel); border: 1px solid var(--line); color: var(--accent-2); }
-  .vazio { color: var(--muted); padding: 24px 0; display: none; }
-  footer { margin-top: 36px; font-size: 12px; color: #64748b; line-height: 1.6; }
-  footer a { color: var(--accent-2); }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>🧰 Central de ferramentas</h1>
-    <p>Ferramentas pequenas que rodam direto no navegador, sem instalar nada.</p>
-  </header>
-
-  <div class="bar">
-    <input type="search" id="busca" placeholder="Buscar ferramenta…" aria-label="Buscar ferramenta">
-    <div class="chips" id="chips"></div>
-  </div>
-
-  <div class="grid" id="grid"></div>
-  <div class="vazio" id="vazio">Nenhuma ferramenta encontrada.</div>
-
-  <footer>
-    Tudo roda no seu navegador; nenhum texto ou configuração sai do aparelho.
-    Configurações ficam no <code>localStorage</code> deste endereço.
-    Código: <a href="https://github.com/AldenorNeto/central-de-ferramentas" target="_blank" rel="noopener">github.com/AldenorNeto/central-de-ferramentas</a>
-  </footer>
-</main>
+<div class="casca">
+  <nav aria-label="Ferramentas">
+    <div class="marca">Central</div>
+    <ul class="lista" id="lista"></ul>
+    <div class="rodape"><a href="https://github.com/AldenorNeto/central-de-ferramentas" target="_blank" rel="noopener">Código</a></div>
+  </nav>
+  <iframe id="quadro" title="Ferramenta"></iframe>
+</div>
 
 <script src="ferramentas.js"></script>
+<script src="icones.js"></script>
 <script>
-  const grid = document.getElementById('grid'), vazio = document.getElementById('vazio');
-  const busca = document.getElementById('busca'), chips = document.getElementById('chips');
-  const todasTags = [...new Set(FERRAMENTAS.flatMap(f => f.tags))].sort();
-  let tagAtiva = '';
+  const lista = document.getElementById('lista'), quadro = document.getElementById('quadro');
+  const guardar = { ler() { try { return localStorage.getItem('cf:ultima'); } catch (e) { return null; } },
+                    gravar(v) { try { localStorage.setItem('cf:ultima', v); } catch (e) {} } };
 
-  function chip(rotulo, valor) {
-    const b = document.createElement('button');
-    b.className = 'chip' + (valor === tagAtiva ? ' on' : ''); b.textContent = rotulo;
-    b.onclick = () => { tagAtiva = valor; render(); };
-    return b;
+  FERRAMENTAS.forEach(f => {
+    const li = document.createElement('li'), a = document.createElement('a');
+    a.href = '#' + f.id; a.dataset.id = f.id;
+    a.innerHTML = icone(f.id) + '<span></span>';
+    a.querySelector('span').textContent = f.nome;
+    li.append(a); lista.append(li);
+  });
+
+  function abrir() {
+    const pedida = decodeURIComponent(location.hash.slice(1));
+    const alvo = FERRAMENTAS.find(f => f.id === pedida) || FERRAMENTAS.find(f => f.id === guardar.ler()) || FERRAMENTAS[0];
+    lista.querySelectorAll('a').forEach(a => {
+      if (a.dataset.id === alvo.id) { a.setAttribute('aria-current', 'page'); a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+      else a.removeAttribute('aria-current');
+    });
+    const url = 'tools/' + alvo.id + '/';
+    if (!quadro.src.endsWith(url)) quadro.src = url;
+    document.title = alvo.nome + ' · Central de ferramentas';
+    guardar.gravar(alvo.id);
+    if (pedida !== alvo.id) history.replaceState(null, '', '#' + alvo.id);
   }
-
-  function render() {
-    chips.replaceChildren(chip('todas', ''), ...todasTags.map(t => chip(t, t)));
-    const q = busca.value.trim().toLowerCase();
-    const lista = FERRAMENTAS.filter(f =>
-      (!tagAtiva || f.tags.includes(tagAtiva)) &&
-      (!q || (f.nome + ' ' + f.desc + ' ' + f.tags.join(' ')).toLowerCase().includes(q)));
-    grid.replaceChildren(...lista.map(f => {
-      const a = document.createElement('a');
-      a.className = 'card'; a.href = `tools/${f.id}/`;
-      a.innerHTML = `<div class="ic"></div><div class="body"><div class="name"></div><div class="desc"></div><div class="tags"></div></div>`;
-      a.querySelector('.ic').textContent = f.icone;
-      a.querySelector('.name').textContent = f.nome;
-      a.querySelector('.desc').textContent = f.desc;
-      a.querySelector('.tags').append(...f.tags.map(t => Object.assign(document.createElement('span'), { className: 'tag', textContent: t })));
-      return a;
-    }));
-    vazio.style.display = lista.length ? 'none' : 'block';
-  }
-
-  busca.addEventListener('input', render);
-  render();
+  window.addEventListener('hashchange', abrir);
+  abrir();
 </script>
 </body>
 </html>

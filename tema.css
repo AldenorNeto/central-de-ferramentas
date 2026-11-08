@@ -1,0 +1,63 @@
+/* Visual comum a todas as ferramentas. Cada página carrega este arquivo e só
+   acrescenta o que é específico dela. */
+:root {
+  color-scheme: dark;
+  --bg: #131516;
+  --surface: #1a1d1f;
+  --raised: #222629;
+  --line: #2e3337;
+  --line-2: #3d4348;
+  --text: #dcdad3;
+  --muted: #8c908d;
+  --accent: #d4a24c;
+  --accent-ink: #1a1408;
+  --ok: #86b88c;
+  --bad: #dc7b6d;
+  --info: #7ea9c9;
+  --r: 4px;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 880px; margin: 0 auto; padding: 28px 32px 56px; }
+@media (max-width: 600px) { main { padding: 20px 16px 40px; } }
+h1 { font-size: 20px; font-weight: 600; margin: 0 0 22px; }
+h2 { font-size: 15px; font-weight: 600; margin: 0; }
+a { color: var(--accent); }
+code { font: 0.9em var(--mono); background: var(--surface); padding: 1px 5px; border-radius: var(--r); }
+label, .rotulo { font-size: 13px; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+input, textarea, select, button { font: inherit; color: inherit; }
+input[type=text], input[type=number], textarea, select {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 8px 10px; color: var(--text);
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+button:focus-visible, a:focus-visible, summary:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+textarea { resize: vertical; }
+
+button {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  background: var(--raised); border: 1px solid var(--line-2); border-radius: var(--r);
+  padding: 7px 12px; font-size: 14px; line-height: 1.2;
+}
+button:hover { border-color: var(--muted); }
+button:active { transform: translateY(1px); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+button.danger { color: var(--bad); }
+
+/* ícones: traço fino, pontas retas */
+svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; stroke-linejoin: miter; }
+
+/* controle deslizante: haste fina e puxador retangular */
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; background: transparent; cursor: pointer; margin: 0; }
+input[type=range]::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(to right, var(--accent) var(--p, 0%), var(--line-2) var(--p, 0%)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 16px; margin-top: -7px; border-radius: 1px; background: var(--text); border: 0; }
+input[type=range]::-moz-range-track { height: 2px; background: var(--line-2); }
+input[type=range]::-moz-range-progress { height: 2px; background: var(--accent); }
+input[type=range]::-moz-range-thumb { width: 8px; height: 16px; border-radius: 1px; background: var(--text); border: 0; }
+
+.estado-erro { color: var(--bad); }
+.estado-ok { color: var(--ok); }

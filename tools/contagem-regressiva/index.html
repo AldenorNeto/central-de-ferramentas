@@ -5,35 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Contagem regressiva</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Ccircle cx='32' cy='34' r='18' fill='none' stroke='%23818cf8' stroke-width='5'/%3E%3Cpath d='M32 34V24M26 10h12' stroke='%23f8fafc' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23131516'/%3E%3Cpath d='M7 3h10M7 21h10M8 3v4l4 5-4 5v4M16 3v4l-4 5 4 5v4' fill='none' stroke='%23d4a24c' stroke-width='1.8' stroke-linecap='square' transform='translate%283 3%29 scale%28.75%29'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../tema.css">
 <style>
-  :root { color-scheme: dark; accent-color: #818cf8; }
-  body { font-family: system-ui, sans-serif; background: #0b1120; color: #e2e8f0; margin: 0; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
-  .voltar { align-self: flex-start; font-size: 13px; color: #a5b4fc; text-decoration: none; }
-  .voltar:hover { text-decoration: underline; }
-  .inputs { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; justify-content: center; }
-  label { font-size: 13px; color: #8b9bb8; display: flex; flex-direction: column; gap: 4px; }
-  input[type=number] { width: 90px; padding: 8px; font: inherit; font-size: 18px; border: 1px solid #26334f; border-radius: 8px; background: #111a2e; color: #f8fafc; }
-  button { font: inherit; padding: 10px 16px; border: 1px solid #26334f; border-radius: 8px; cursor: pointer; background: #111a2e; color: #e2e8f0; }
-  button:hover { background: #172036; }
-  button.primary { background: #818cf8; border-color: #818cf8; color: #0b1120; font-weight: 600; }
-  #tempo { font-size: clamp(48px, 16vw, 120px); font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: 2px; }
-  #tempo.fim { color: #f87171; }
-  #status { color: #8b9bb8; min-height: 1.2em; }
+.campos { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.campos label { display: flex; flex-direction: column; gap: 4px; }
+.campos input { width: 88px; font-size: 18px; font-variant-numeric: tabular-nums; }
+.botoes { display: flex; gap: 8px; margin-left: 4px; }
+#tempo { margin: 36px 0 8px; font: 600 clamp(52px, 15vw, 112px)/1 var(--mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+#tempo.fim { color: var(--bad); }
+#status { min-height: 1.4em; color: var(--muted); }
 </style>
 </head>
 <body>
-  <a class="voltar" href="../../">← Central de ferramentas</a>
-  <div class="inputs">
+<main>
+  <h1>Contagem regressiva</h1>
+  <div class="campos">
     <label>Horas <input type="number" id="h" min="0" value="0"></label>
     <label>Minutos <input type="number" id="m" min="0" value="25"></label>
     <label>Segundos <input type="number" id="s" min="0" value="0"></label>
-    <button id="iniciar" class="primary">Iniciar</button>
-    <button id="pausar">Pausar</button>
-    <button id="zerar">Zerar</button>
+    <div class="botoes">
+      <button id="iniciar" class="primary">Iniciar</button>
+      <button id="pausar">Pausar</button>
+      <button id="zerar">Zerar</button>
+    </div>
   </div>
   <div id="tempo">00:25:00</div>
   <div id="status"></div>
+</main>
 
 <script>
   const $ = id => document.getElementById(id);
@@ -60,7 +59,7 @@
   function passo() {
     restante = Math.max(0, fimEm - Date.now());
     desenhar();
-    if (restante === 0) { parar(); $('tempo').classList.add('fim'); $('status').textContent = 'Tempo esgotado!'; apito(); }
+    if (restante === 0) { parar(); $('tempo').classList.add('fim'); $('status').textContent = 'Tempo esgotado'; apito(); }
   }
 
   $('iniciar').onclick = () => {

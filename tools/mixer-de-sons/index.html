@@ -5,457 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
     <title>Mixer de sons</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Cg stroke='%23818cf8' stroke-width='6' stroke-linecap='round'%3E%3Cpath d='M16 26v12M26 18v28M36 24v16M46 14v36'/%3E%3C/g%3E%3C/svg%3E"
-    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23131516'/%3E%3Cpath d='M6 3v18M12 3v18M18 3v18M3.5 15h5M9.5 8h5M15.5 17h5' fill='none' stroke='%23d4a24c' stroke-width='1.8' stroke-linecap='square' transform='translate%283 3%29 scale%28.75%29'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="../../tema.css" />
     <style>
-      :root {
-        color-scheme: dark;
-        accent-color: #818cf8;
-        --bg: #0b1120;
-        --panel: #111a2e;
-        --card: #172036;
-        --line: #26334f;
-        --text: #e2e8f0;
-        --muted: #8b9bb8;
-        --accent: #818cf8;
-        --accent-2: #a5b4fc;
-        --ok: #34d399;
-        --warn: #fbbf24;
-        --bad: #f87171;
-        --info: #38bdf8;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        font-family:
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        margin: 0;
-      }
-      main {
-        max-width: 1080px;
-        margin: 0 auto;
-        padding: 24px 20px 48px;
-      }
-      header h1 {
-        font-size: 26px;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      header p {
-        margin: 6px 0 0;
-        color: var(--muted);
-        font-size: 14px;
-      }
-      code {
-        background: var(--panel);
-        padding: 1px 5px;
-        border-radius: 4px;
-        font-size: 0.9em;
-      }
+      main { max-width: 1040px; }
+      .hide { display: none !important; }
 
       /* ---------- barra de controles ---------- */
       .toolbar {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        margin: 20px -8px 8px;
-        padding: 12px 8px;
-        background: color-mix(in srgb, var(--bg) 88%, transparent);
-        backdrop-filter: blur(8px);
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, auto));
-        gap: 12px 16px;
-        border-bottom: 1px solid var(--line);
+        position: sticky; top: 0; z-index: 10; margin: 0 -32px 8px; padding: 14px 32px;
+        background: var(--bg); border-bottom: 1px solid var(--line);
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, auto)); gap: 14px 28px;
       }
-      .group {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 0;
-      }
-      .group > .label {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.09em;
-        color: var(--muted);
-      }
-      .group .ctl {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-      }
-      .group.master .ctl {
-        gap: 10px;
-        flex-wrap: nowrap;
-      }
-      .group.master input {
-        flex: 1;
-        min-width: 100px;
-      }
-      .group.master .mv {
-        width: 38px;
-        text-align: right;
-        color: var(--muted);
-        font-size: 13px;
-        font-variant-numeric: tabular-nums;
-      }
-
-      button {
-        font: inherit;
-        font-size: 13px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 7px 11px;
-        cursor: pointer;
-        background: var(--panel);
-        color: var(--text);
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition:
-          background 0.15s,
-          border-color 0.15s;
-      }
-      button:hover {
-        background: var(--card);
-        border-color: #3a4a6e;
-      }
-      button.primary {
-        background: var(--accent);
-        color: #0b1120;
-        border-color: var(--accent);
-        font-weight: 600;
-      }
-      button.primary:hover {
-        background: var(--accent-2);
-      }
-      button.danger {
-        color: var(--bad);
-        border-color: color-mix(in srgb, var(--bad) 40%, var(--line));
-      }
-      .seg {
-        display: inline-flex;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      .seg button {
-        border: 0;
-        border-radius: 0;
-        background: var(--panel);
-      }
-      .seg button.on {
-        background: var(--accent);
-        color: #0b1120;
-        font-weight: 600;
-      }
-      .status {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        color: var(--muted);
-        margin-left: 4px;
-      }
-      .status::before {
-        content: "";
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--line);
-      }
-      .status.dirty::before {
-        background: var(--warn);
-      }
-      .status.ok::before {
-        background: var(--ok);
-      }
+      @media (max-width: 600px) { .toolbar { position: static; margin: 0 -16px 8px; padding: 12px 16px; } }
+      .group { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+      .group > .label { font-size: 13px; color: var(--muted); }
+      .group .ctl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      .group.master .ctl { gap: 12px; flex-wrap: nowrap; }
+      .group.master input { flex: 1; min-width: 100px; }
+      .group.master .mv { width: 38px; text-align: right; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+      .seg { display: inline-flex; }
+      .seg button { border-radius: 0; margin-left: -1px; }
+      .seg button:first-child { border-radius: var(--r) 0 0 var(--r); margin-left: 0; }
+      .seg button:last-child { border-radius: 0 var(--r) var(--r) 0; }
+      .seg button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; position: relative; }
+      .status { font-size: 12px; color: var(--muted); margin-left: 4px; }
+      .status.dirty { color: var(--accent); }
+      .status.ok { color: var(--ok); }
 
       /* ---------- famílias ---------- */
-      .family {
-        margin-top: 28px;
-      }
-      .fhead {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding-bottom: 10px;
-        margin-bottom: 14px;
-        border-bottom: 1px solid var(--line);
-      }
-      .fhead .fic {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        display: grid;
-        place-items: center;
-        font-size: 20px;
-        background: var(--panel);
-        border: 1px solid var(--line);
-      }
-      .fhead h2 {
-        margin: 0;
-        font-size: 17px;
-      }
-      .fhead .fsub {
-        color: var(--muted);
-        font-size: 13px;
-      }
-      .fhead .count {
-        margin-left: auto;
-        font-size: 12px;
-        padding: 3px 9px;
-        border-radius: 99px;
-        background: var(--panel);
-        color: var(--muted);
-        border: 1px solid var(--line);
-      }
-      .fhead .count.has {
-        color: var(--ok);
-        border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 12px;
-      }
+      .family { margin-top: 30px; }
+      .fhead { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+      .fhead svg { color: var(--muted); }
+      .fhead .count { margin-left: auto; font-size: 13px; color: var(--muted); }
+      .fhead .count.has { color: var(--accent); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 
-      /* ---------- cards ---------- */
-      .card {
-        display: flex;
-        gap: 12px;
-        padding: 12px;
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        transition:
-          border-color 0.15s,
-          box-shadow 0.15s;
-      }
-      .card.on {
-        border-color: var(--accent);
-        box-shadow:
-          0 0 0 1px var(--accent) inset,
-          0 4px 18px -8px var(--accent);
-      }
-      .card .ic {
-        flex: none;
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        display: grid;
-        place-items: center;
-        font-size: 24px;
-        background: var(--panel);
-      }
-      .card.on .ic {
-        background: color-mix(in srgb, var(--accent) 22%, var(--panel));
-      }
-      .card .body {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 7px;
-      }
-      .card .row1 {
-        display: flex;
-        align-items: baseline;
-        gap: 8px;
-      }
-      .card .name {
-        font-weight: 600;
-        font-size: 15px;
-      }
-      .card .val {
-        margin-left: auto;
-        font-size: 12px;
-        color: var(--muted);
-        font-variant-numeric: tabular-nums;
-      }
-      .card.on .val {
-        color: var(--accent-2);
-      }
-      .tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-      .tag {
-        font-size: 11px;
-        line-height: 1;
-        padding: 4px 7px;
-        border-radius: 99px;
-        border: 1px solid transparent;
-        white-space: nowrap;
-      }
-      .tag.warn {
-        color: var(--warn);
-        background: color-mix(in srgb, var(--warn) 12%, transparent);
-        border-color: color-mix(in srgb, var(--warn) 30%, transparent);
-      }
-      .tag.bad {
-        color: var(--bad);
-        background: color-mix(in srgb, var(--bad) 12%, transparent);
-        border-color: color-mix(in srgb, var(--bad) 30%, transparent);
-      }
-      .tag.info {
-        color: var(--info);
-        background: color-mix(in srgb, var(--info) 12%, transparent);
-        border-color: color-mix(in srgb, var(--info) 30%, transparent);
-      }
-      .tag.mute {
-        color: var(--muted);
-        background: var(--panel);
-        border-color: var(--line);
-      }
-      .note {
-        font-size: 12px;
-        color: var(--muted);
-        line-height: 1.4;
-      }
-      .beats {
-        display: flex;
-        gap: 4px;
-        flex-wrap: wrap;
-      }
-      .beats button {
-        padding: 4px 8px;
-        font-size: 11px;
-        border-radius: 6px;
-      }
-      .beats button.sel {
-        background: var(--accent);
-        color: #0b1120;
-        border-color: var(--accent);
-        font-weight: 600;
-      }
-      .hide {
-        display: none !important;
-      }
-
-      /* ---------- sliders ---------- */
-      input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        height: 6px;
-        border-radius: 99px;
-        outline: none;
-        cursor: pointer;
-        background: linear-gradient(
-          to right,
-          var(--accent) var(--p, 0%),
-          #2a3858 var(--p, 0%)
-        );
-      }
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #fff;
-        border: 2px solid var(--accent);
-      }
-      input[type="range"]::-moz-range-thumb {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #fff;
-        border: 2px solid var(--accent);
-      }
-      input[type="range"]:focus-visible {
-        outline: 2px solid var(--accent-2);
-        outline-offset: 4px;
-      }
+      /* ---------- canais ---------- */
+      .card { display: flex; gap: 12px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+      .card.on { border-color: var(--accent); }
+      .card .ic { flex: none; width: 36px; height: 36px; display: grid; place-items: center; color: var(--muted); border: 1px solid var(--line); border-radius: var(--r); }
+      .card.on .ic { color: var(--accent); border-color: var(--accent); }
+      .card .ic svg { width: 20px; height: 20px; }
+      .card .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+      .card .row1 { display: flex; align-items: baseline; gap: 8px; }
+      .card .name { font-weight: 600; font-size: 14px; }
+      .card .val { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+      .card.on .val { color: var(--accent); }
+      .tags { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+      .tag { font-size: 12px; color: var(--muted); white-space: nowrap; }
+      .tag.warn { color: var(--accent); }
+      .tag.bad { color: var(--bad); }
+      .tag.info { color: var(--info); }
+      .beats { display: flex; gap: 4px; flex-wrap: wrap; }
+      .beats button { padding: 3px 8px; font-size: 12px; }
+      .beats button.sel { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 
       /* ---------- pesquisa ---------- */
-      details {
-        margin-top: 32px;
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 4px 18px;
-      }
-      summary {
-        cursor: pointer;
-        font-weight: 600;
-        padding: 12px 0;
-      }
-      .research {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .research li {
-        display: grid;
-        grid-template-columns: 150px 1fr;
-        gap: 12px;
-        font-size: 14px;
-        line-height: 1.55;
-        color: #cbd5e1;
-        padding-top: 12px;
-        border-top: 1px solid var(--line);
-      }
-      .research li:first-child {
-        border-top: 0;
-        padding-top: 0;
-      }
-      .research b {
-        color: var(--text);
-      }
-      .research a {
-        color: var(--accent-2);
-      }
-      .research .tag {
-        display: inline-block;
-        margin-top: 4px;
-      }
-      @media (max-width: 640px) {
-        .research li {
-          grid-template-columns: 1fr;
-          gap: 4px;
-        }
-      }
-      footer {
-        margin-top: 20px;
-        font-size: 12px;
-        color: #64748b;
-      }
-      .voltar { display: inline-block; margin: 0 0 14px; font: 13px system-ui, sans-serif; color: #a5b4fc; text-decoration: none; }
-  .voltar:hover { text-decoration: underline; }
-</style>
+      details { margin-top: 34px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); padding: 2px 18px; }
+      summary { cursor: pointer; font-weight: 600; padding: 12px 0; display: flex; align-items: center; gap: 10px; list-style: none; }
+      summary::-webkit-details-marker { display: none; }
+      summary::after { content: "+"; margin-left: auto; color: var(--muted); font-weight: 400; }
+      details[open] summary::after { content: "−"; }
+      .research { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-direction: column; gap: 12px; }
+      .research li { display: grid; grid-template-columns: 150px 1fr; gap: 12px; font-size: 14px; line-height: 1.55; padding-top: 12px; border-top: 1px solid var(--line); }
+      .research li:first-child { border-top: 0; padding-top: 0; }
+      .research .tag { display: inline-block; margin-top: 2px; }
+      @media (max-width: 640px) { .research li { grid-template-columns: 1fr; gap: 4px; } }
+      footer { margin-top: 20px; font-size: 12px; color: var(--muted); }
+    </style>
   </head>
   <body>
+    <script src="../../icones.js"></script>
     <main>
-<a class="voltar" href="../../">← Central de ferramentas</a>
-
-      <header>
-        <h1>🎚️ Mixer de sons</h1>
-        <p>
-          Misture ruídos de foco e sons ambientes. Os sons da natureza podem vir
-          de arquivos (pasta <code>sons/</code>) ou ser gerados na hora pelo
-          navegador.
-        </p>
-      </header>
+<h1>Mixer de sons</h1>
 
       <div class="toolbar">
         <div class="group master">
-          <span class="label">🔊 Volume geral</span>
+          <span class="label">Volume geral</span>
           <div class="ctl">
             <input
               type="range"
@@ -468,29 +95,29 @@
           </div>
         </div>
         <div class="group">
-          <span class="label">✨ Cenas prontas</span>
+          <span class="label">Cenas</span>
           <div class="ctl">
-            <button data-preset="foco">🎯 Foco</button>
-            <button data-preset="chuva">⛈️ Chuva + trovão</button>
-            <button data-preset="acampamento">🔥 Acampamento</button>
-            <button data-preset="floresta">🌲 Floresta</button>
+            <button data-preset="foco">Foco</button>
+            <button data-preset="chuva">Chuva e trovão</button>
+            <button data-preset="acampamento">Acampamento</button>
+            <button data-preset="floresta">Floresta</button>
           </div>
         </div>
         <div class="group">
-          <span class="label">🎼 Fonte dos sons</span>
+          <span class="label">Fonte dos sons</span>
           <div class="ctl">
             <div class="seg">
-              <button data-mode="rec">📁 Arquivos</button>
-              <button data-mode="synth">⚙️ Sintetizado</button>
+              <button data-mode="rec">Arquivos</button>
+              <button data-mode="synth">Sintetizado</button>
             </div>
           </div>
         </div>
         <div class="group">
-          <span class="label">💾 Configuração</span>
+          <span class="label">Configuração</span>
           <div class="ctl">
-            <button id="save">💾 Salvar</button>
-            <button id="load">📂 Carregar</button>
-            <button id="stop" class="danger">⏹ Parar tudo</button>
+            <button id="save"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7"/></svg>Salvar</button>
+            <button id="load"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h6l2 2h8v10H4zM4 8V4h6l2 2"/></svg>Carregar</button>
+            <button id="stop" class="danger"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z"/></svg>Parar tudo</button>
             <span class="status" id="status"></span>
           </div>
         </div>
@@ -499,7 +126,7 @@
       <div id="families"></div>
 
       <details>
-        <summary>📚 O que a pesquisa diz (e o que não diz)</summary>
+        <summary>O que a pesquisa diz e o que não diz</summary>
         <ul class="research">
           <li>
             <div>
@@ -705,7 +332,7 @@
           small: { t: "Evidência pequena (TDAH)", k: "warn" },
           none: { t: "Sem estudos controlados", k: "bad" },
           mixed: { t: "Evidência mista", k: "warn" },
-          phones: { t: "🎧 Use fones", k: "info" },
+          phones: { t: "Use fones", k: "info" },
           synth: { t: "Sintético", k: "mute" },
           both: { t: "Arquivo ou sintético", k: "mute" },
           fileOnly: { t: "Só arquivo", k: "mute" },
@@ -714,27 +341,23 @@
         const FAMILIES = [
           {
             id: "foco",
-            icon: "🧠",
+            icon: "foco",
             name: "Foco",
-            sub: "Ruídos usados para concentração",
           },
           {
             id: "clima",
-            icon: "🌦️",
+            icon: "clima",
             name: "Clima",
-            sub: "Chuva, trovão e vento",
           },
           {
             id: "natureza",
-            icon: "🌳",
+            icon: "natureza",
             name: "Natureza",
-            sub: "Mata, água e bichos",
           },
           {
             id: "ambientes",
-            icon: "🏕️",
+            icon: "ambientes",
             name: "Ambientes",
-            sub: "Lugares com fogo, água e eco",
           },
         ];
 
@@ -742,7 +365,7 @@
           {
             id: "white",
             group: "foco",
-            icon: "⚪",
+            icon: "white",
             name: "Ruído branco",
             tags: [T.small, T.synth],
             note: "Todas as frequências com a mesma energia. Chiado.",
@@ -751,7 +374,7 @@
           {
             id: "pink",
             group: "foco",
-            icon: "🌸",
+            icon: "pink",
             name: "Ruído rosa",
             tags: [T.small, T.synth],
             note: "Menos agudo que o branco. Parece chuva suave.",
@@ -760,7 +383,7 @@
           {
             id: "brown",
             group: "foco",
-            icon: "🟤",
+            icon: "brown",
             name: "Ruído marrom",
             tags: [T.none, T.synth],
             note: "Grave, como trovão distante ou turbina.",
@@ -769,7 +392,7 @@
           {
             id: "binaural",
             group: "foco",
-            icon: "🎧",
+            icon: "binaural",
             name: "Batida binaural",
             tags: [T.mixed, T.phones],
             note: "Um tom em cada ouvido; a diferença entre eles é a batida.",
@@ -798,7 +421,7 @@
           {
             id: "rain",
             group: "clima",
-            icon: "🌧️",
+            icon: "rain",
             name: "Chuva",
             file: "rain-light",
             tags: [T.both],
@@ -818,7 +441,7 @@
           {
             id: "thunder",
             group: "clima",
-            icon: "⛈️",
+            icon: "thunder",
             name: "Trovões",
             file: "rain-storm",
             tags: [T.both],
@@ -850,7 +473,7 @@
           {
             id: "wind",
             group: "clima",
-            icon: "💨",
+            icon: "wind",
             name: "Vento",
             file: "meadow-wind",
             tags: [T.both],
@@ -866,7 +489,7 @@
             id: "winter",
             group: "clima",
             recOnly: true,
-            icon: "❄️",
+            icon: "winter",
             name: "Vento de inverno",
             file: "winter-wind",
             tags: [T.fileOnly],
@@ -875,7 +498,7 @@
           {
             id: "forest",
             group: "natureza",
-            icon: "🌲",
+            icon: "forest",
             name: "Floresta",
             file: "forest-day",
             tags: [T.both],
@@ -923,7 +546,7 @@
           {
             id: "stream",
             group: "natureza",
-            icon: "💧",
+            icon: "stream",
             name: "Riacho",
             file: "river-stream",
             tags: [T.both],
@@ -937,7 +560,7 @@
           {
             id: "waves",
             group: "natureza",
-            icon: "🌊",
+            icon: "waves",
             name: "Ondas",
             file: "ocean-waves",
             tags: [T.both],
@@ -950,7 +573,7 @@
           {
             id: "crickets",
             group: "natureza",
-            icon: "🌙",
+            icon: "crickets",
             name: "Grilos",
             file: "night-crickets",
             tags: [T.both],
@@ -975,7 +598,7 @@
           {
             id: "fire",
             group: "ambientes",
-            icon: "🔥",
+            icon: "fire",
             name: "Fogueira",
             file: "campfire",
             tags: [T.both],
@@ -1004,7 +627,7 @@
             id: "fireplace",
             group: "ambientes",
             recOnly: true,
-            icon: "🏠",
+            icon: "fireplace",
             name: "Lareira e relógio",
             file: "fireplace-room",
             tags: [T.fileOnly],
@@ -1013,7 +636,7 @@
             id: "cave",
             group: "ambientes",
             recOnly: true,
-            icon: "🕳️",
+            icon: "cave",
             name: "Pingos de caverna",
             file: "cave-drips",
             tags: [T.fileOnly],
@@ -1022,7 +645,7 @@
             id: "fountain",
             group: "ambientes",
             recOnly: true,
-            icon: "⛲",
+            icon: "fountain",
             name: "Fonte da praça",
             file: "town-fountain",
             tags: [T.fileOnly],
@@ -1201,8 +824,7 @@
         FAMILIES.forEach((f) => {
           const sec = document.createElement("section");
           sec.className = "family";
-          sec.innerHTML = `<div class="fhead"><div class="fic">${f.icon}</div>
-      <div><h2>${f.name}</h2><div class="fsub">${f.sub}</div></div><span class="count"></span></div><div class="grid"></div>`;
+          sec.innerHTML = `<div class="fhead">${icone(f.icon)}<h2>${f.name}</h2><span class="count"></span></div><div class="grid"></div>`;
           f.countEl = sec.querySelector(".count");
           f.grid = sec.querySelector(".grid");
           famRoot.append(sec);
@@ -1216,17 +838,11 @@
             ch.beat = saved.beat;
           const card = document.createElement("div");
           card.className = "card";
-          card.innerHTML = `<div class="ic">${ch.icon}</div><div class="body">
+          card.innerHTML = `<div class="ic">${icone(ch.icon)}</div><div class="body">
       <div class="row1"><span class="name">${ch.name}</span><span class="val"></span></div>
       <div class="tags">${(ch.tags || []).map((t) => `<span class="tag ${t.k}">${t.t}</span>`).join("")}</div>
       <input type="range" min="0" max="1" step="0.01" value="0" aria-label="${ch.name}"></div>`;
           const body = card.querySelector(".body");
-          if (ch.note) {
-            const n = document.createElement("div");
-            n.className = "note";
-            n.textContent = ch.note;
-            body.append(n);
-          }
           if (ch.id === "binaural") {
             const row = document.createElement("div");
             row.className = "beats";
