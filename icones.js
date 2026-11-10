@@ -7,6 +7,7 @@ const ICONES = {
   'container-redimensionavel': 'M4 4h16v16H4zM20 12l-8 8M20 16.5l-3.5 3.5',
   'json-minify': 'M9 4H7v6l-2.5 2L7 14v6h2M15 4h2v6l2.5 2-2.5 2v6h-2',
   'contador-de-texto': 'M4 6h16M4 11h16M4 16h9M17 14v6M14 17h6',
+  'lista-de-tarefas': 'M4 5h4v4H4zM4 15h4v4H4zM11 7h9M11 17h9M5 7l1 1 2-2.5',
   // mixer: famílias
   foco: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 11.5v1',
   clima: 'M7 17a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 8.5a3.8 3.8 0 0 1 .5 8.5zM8 20l1-2M12 20l1-2M16 20l1-2',

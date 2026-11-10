@@ -78,7 +78,7 @@
     let q = quadros.querySelector('[data-id="' + alvo.id + '"]');
     if (!q) {
       q = document.createElement('iframe');
-      q.dataset.id = alvo.id; q.title = alvo.nome; q.src = 'tools/' + alvo.id + '/';
+      q.dataset.id = alvo.id; q.title = alvo.nome; q.src = alvo.url || ('tools/' + alvo.id + '/');
       quadros.append(q);
     }
     quadros.querySelectorAll('iframe').forEach(f => { f.hidden = f !== q; });
