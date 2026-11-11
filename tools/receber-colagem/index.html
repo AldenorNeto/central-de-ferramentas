@@ -45,7 +45,7 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
       <label>Seu nome <input type="text" id="nomeEu" value="Aldenor" autocomplete="off"></label>
       <label>Outra pessoa <input type="text" id="nomeOutro" value="Quintino" autocomplete="off"></label>
     </div>
-    <p class="dica">O Teams não envia quem falou. Clique no nome de uma mensagem para trocar: ela e as seguintes (que você ainda não marcou) mudam juntas.</p>
+    <p class="dica">O Teams não envia quem falou, então marquei sozinho o que dá para deduzir (respostas e quem chama o outro pelo nome). Clique no nome de uma mensagem para trocar: ela e as seguintes sem pista mudam juntas.</p>
     <div id="msgs"></div>
   </section>
 
@@ -149,14 +149,22 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
   const nome = quem => (quem === 'eu' ? nomeEu.value.trim() || 'Eu' : nomeOutro.value.trim() || 'Outro');
 
   function atribuir() {
-    // uma resposta a uma mensagem do "eu" quase sempre vem da outra pessoa, e vice-versa
-    const primeiro = nomeEu.value.trim().split(/\s+/)[0].toLowerCase();
+    const tok = el => el.value.trim().split(/\s+/)[0].toLowerCase();
+    const eu = tok(nomeEu), outro = tok(nomeOutro);
+    const cita = (texto, n) => !!n && texto.toLowerCase().split(/[^\p{L}\p{N}]+/u).includes(n);
     msgs.forEach(m => {
-      if (m.resposta && m.resposta.autor && primeiro) {
-        const doEu = m.resposta.autor.toLowerCase().includes(primeiro);
-        m.quem = doEu ? 'outro' : 'eu'; m.manual = true;
+      m.manual = false;
+      // 1) uma resposta a mensagem de um lado vem do outro lado
+      if (m.resposta && m.resposta.autor && eu) {
+        m.quem = m.resposta.autor.toLowerCase().includes(eu) ? 'outro' : 'eu'; m.manual = true; return;
       }
+      // 2) quem chama alguém pelo nome no começo da mensagem ("Opa Aldenor", "Quintino, ...") não é essa pessoa
+      const inicio = m.texto.slice(0, 60);
+      const falaComEu = cita(inicio, eu), falaComOutro = cita(inicio, outro);
+      if (falaComEu !== falaComOutro) { m.quem = falaComEu ? 'outro' : 'eu'; m.manual = true; }
     });
+    // o que ficou sem pista segue o bloco anterior
+    msgs.forEach((m, k) => { if (!m.manual) m.quem = k ? msgs[k - 1].quem : 'outro'; });
   }
 
   function trocar(i) {
@@ -191,7 +199,7 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
 
   [nomeEu, nomeOutro].forEach((el, k) => el.addEventListener('input', () => {
     try { localStorage.setItem(k ? 'cf:colagem:outro' : 'cf:colagem:eu', el.value); } catch (e) {}
-    if (msgs.length) desenhar();
+    if (msgs.length) { atribuir(); desenhar(); }
   }));
 
   // ---------- colagem ----------
