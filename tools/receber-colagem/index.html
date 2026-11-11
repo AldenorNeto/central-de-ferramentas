@@ -11,6 +11,10 @@
 .campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
 textarea { width: 100%; height: 200px; font: 14px/1.5 var(--mono); white-space: pre; tab-size: 4; }
 .acoes { display: flex; gap: 8px; }
+details { margin-top: 22px; }
+summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
+#origem { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -21,18 +25,57 @@ textarea { width: 100%; height: 200px; font: 14px/1.5 var(--mono); white-space: 
     <textarea id="entrada" spellcheck="false" autofocus></textarea>
   </div>
   <div class="campo">
-    <label for="saida">Recebido</label>
+    <label for="saida">Recebido <span id="origem"></span></label>
     <textarea id="saida" spellcheck="false" readonly></textarea>
   </div>
   <div class="acoes"><button id="limpar">Limpar</button></div>
+  <details>
+    <summary>O que veio na área de transferência</summary>
+    <p id="tipos" class="rotulo"></p>
+    <textarea id="bruto" spellcheck="false" readonly aria-label="HTML bruto"></textarea>
+  </details>
 </main>
 
 <script>
   const entrada = document.getElementById('entrada'), saida = document.getElementById('saida');
-  // O texto vem do valor do campo: o que foi colado, sem tirar nem acrescentar nada.
-  const espelhar = () => { saida.value = entrada.value; };
-  entrada.addEventListener('input', espelhar);
-  document.getElementById('limpar').onclick = () => { entrada.value = ''; espelhar(); entrada.focus(); };
+  const origem = document.getElementById('origem'), tipos = document.getElementById('tipos'), bruto = document.getElementById('bruto');
+
+  const BLOCOS = new Set(['ADDRESS','ARTICLE','ASIDE','BLOCKQUOTE','BR','DD','DIV','DL','DT','FIELDSET','FIGCAPTION','FIGURE','FOOTER','FORM','H1','H2','H3','H4','H5','H6','HEADER','HR','LI','MAIN','NAV','OL','P','PRE','SECTION','TABLE','TR','UL']);
+  const IGNORAR = new Set(['SCRIPT','STYLE','TEMPLATE','HEAD','NOSCRIPT']);
+
+  // HTML -> texto, sem executar nada (DOMParser é inerte). Quebra linha em blocos e junta o resto.
+  function htmlParaTexto(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    let out = '';
+    (function andar(no) {
+      if (no.nodeType === 3) { out += no.nodeValue.replace(/\s+/g, ' '); return; }
+      if (no.nodeType !== 1 || IGNORAR.has(no.tagName)) return;
+      const bloco = BLOCOS.has(no.tagName);
+      if (bloco) out += '\n';
+      no.childNodes.forEach(andar);
+      if (bloco) out += '\n';
+    })(doc.body);
+    return out.split('\n').map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  let daColagem = false;
+  entrada.addEventListener('paste', e => {
+    const cd = e.clipboardData; if (!cd) return;
+    const html = cd.getData('text/html'), plano = cd.getData('text/plain');
+    tipos.textContent = 'Formatos: ' + ([...cd.types].join(', ') || 'nenhum');
+    bruto.value = html;
+    daColagem = true;
+    if (html) { saida.value = htmlParaTexto(html); origem.textContent = '(lido do HTML, com nomes e horários quando existem)'; }
+    else { saida.value = plano; origem.textContent = '(texto simples)'; }
+  });
+  // digitação normal: o de baixo espelha o de cima
+  entrada.addEventListener('input', e => {
+    if (e.inputType === 'insertFromPaste' && daColagem) { daColagem = false; return; }
+    saida.value = entrada.value; origem.textContent = '';
+  });
+  document.getElementById('limpar').onclick = () => {
+    entrada.value = ''; saida.value = ''; bruto.value = ''; tipos.textContent = ''; origem.textContent = ''; entrada.focus();
+  };
 </script>
 </body>
 </html>
