@@ -58,6 +58,27 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
     return out.split('\n').map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
   }
 
+  // Colagem do Teams: <span data-teams> com um <span> por mensagem, e <p> dentro de cada uma.
+  // O parágrafo só com &nbsp; é uma linha em branco; o resto do bloco é espaço de formatação.
+  function textoInline(no) {
+    if (no.nodeType === 3) return no.nodeValue.replace(/ /g, ' ');
+    if (no.nodeType !== 1 || IGNORAR.has(no.tagName)) return '';
+    if (no.tagName === 'BR') return '\n';
+    if (no.tagName === 'IMG') return no.getAttribute('alt') || '';
+    return [...no.childNodes].map(textoInline).join('');
+  }
+  function mensagensDoTeams(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const raiz = doc.querySelector('[data-teams]');
+    if (!raiz) return null;
+    return [...raiz.children].map(msg => {
+      const ps = [...msg.querySelectorAll('p')];
+      const linhas = ps.length ? ps.map(p => textoInline(p).replace(/\s+$/, '')) : [textoInline(msg).trim()];
+      return linhas.join('\n').trim();
+    }).filter(Boolean);
+  }
+  const SEPARADOR = '\n\n──────\n\n';
+
   let daColagem = false;
   entrada.addEventListener('paste', e => {
     const cd = e.clipboardData; if (!cd) return;
@@ -65,7 +86,11 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
     tipos.textContent = 'Formatos: ' + ([...cd.types].join(', ') || 'nenhum');
     bruto.value = html;
     daColagem = true;
-    if (html) { saida.value = htmlParaTexto(html); origem.textContent = '(lido do HTML, com nomes e horários quando existem)'; }
+    const msgs = html ? mensagensDoTeams(html) : null;
+    if (msgs) {
+      saida.value = msgs.join(SEPARADOR);
+      origem.textContent = '(Teams: ' + msgs.length + (msgs.length === 1 ? ' mensagem' : ' mensagens') + '; o Teams não envia nome nem horário)';
+    } else if (html) { saida.value = htmlParaTexto(html); origem.textContent = '(lido do HTML)'; }
     else { saida.value = plano; origem.textContent = '(texto simples)'; }
   });
   // digitação normal: o de baixo espelha o de cima
