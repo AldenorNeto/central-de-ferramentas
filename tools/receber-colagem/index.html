@@ -24,6 +24,8 @@ textarea { width: 100%; height: 150px; font: 14px/1.5 var(--mono); white-space: 
 .msg .corpo { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
 .msg .resposta { color: var(--muted); font-size: 12px; margin-bottom: 4px; border-left: 2px solid var(--line-2); padding-left: 8px; }
 .dica { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+.opcoes { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+.opcoes label { display: flex; align-items: center; gap: 6px; }
 @media (max-width: 560px) { .msg { grid-template-columns: 1fr; } }
 
 details { margin-top: 22px; }
@@ -45,7 +47,11 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
       <label>Seu nome <input type="text" id="nomeEu" value="Aldenor" autocomplete="off"></label>
       <label>Outra pessoa <input type="text" id="nomeOutro" value="Quintino" autocomplete="off"></label>
     </div>
-    <p class="dica">O Teams não envia quem falou, então marquei sozinho o que dá para deduzir (respostas e quem chama o outro pelo nome). Clique no nome de uma mensagem para trocar: ela e as seguintes sem pista mudam juntas.</p>
+    <p class="dica">O Teams não envia quem falou. Marquei sozinho o que dá para deduzir (respostas e quem chama o outro pelo nome); no resto, clique no nome da mensagem para trocar.</p>
+    <div class="opcoes">
+      <label><input type="checkbox" id="trocaSeguintes"> Trocar também as seguintes sem marca</label>
+      <label><input type="checkbox" id="incluiResposta"> Incluir a citação das respostas</label>
+    </div>
     <div id="msgs"></div>
   </section>
 
@@ -99,7 +105,7 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
   // <span data-teams> > um <span> por mensagem > <p>/<ul> com o texto. Respostas vêm num
   // <blockquote itemtype=".../Reply"> com o autor e a prévia da mensagem citada.
   function textoInline(no) {
-    if (no.nodeType === 3) return no.nodeValue.replace(/ /g, ' ');
+    if (no.nodeType === 3) return no.nodeValue.replace(/\s*\n\s*/g, ' ').replace(/ /g, ' ');
     if (no.nodeType !== 1 || IGNORAR.has(no.tagName)) return '';
     if (no.tagName === 'BR') return '\n';
     if (no.tagName === 'IMG') return no.getAttribute('alt') || '';
@@ -130,8 +136,9 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
         if (el.tagName === 'P') {
           // cartão de pré-visualização de link ("Jira", "Log in with…"): ruído para quem lê
           if (temLink && /margin:\s*0/.test(el.getAttribute('style') || '')) return;
-          linhas.push(textoInline(el).replace(/\s+$/, ''));
+          linhas.push(textoInline(el).trim());
         } else {
+          if (linhas.length && linhas[linhas.length - 1] !== '') linhas.push('');
           el.querySelectorAll(':scope > li').forEach(li => {
             const t = textoInline(li).replace(/[ \t]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim();
             linhas.push('- ' + t.replace(/\n/g, '\n  '));
@@ -170,13 +177,13 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
   function trocar(i) {
     const alvo = msgs[i].quem === 'eu' ? 'outro' : 'eu';
     msgs[i].quem = alvo; msgs[i].manual = true;
-    for (let j = i + 1; j < msgs.length && !msgs[j].manual; j++) msgs[j].quem = alvo;
+    if ($('trocaSeguintes').checked) for (let j = i + 1; j < msgs.length && !msgs[j].manual; j++) msgs[j].quem = alvo;
     desenhar();
   }
 
   function linhaDe(m) {
     let t = nome(m.quem) + ': ';
-    if (m.resposta) t += '(em resposta a ' + (m.resposta.autor || 'outra mensagem') + (m.resposta.previa ? ': "' + m.resposta.previa + '"' : '') + ')\n';
+    if (m.resposta && $('incluiResposta').checked) t +='(em resposta a ' + (m.resposta.autor || 'outra mensagem') + (m.resposta.previa ? ': "' + m.resposta.previa + '"' : '') + ')\n';
     return t + m.texto;
   }
 
@@ -197,6 +204,7 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
     saida.value = msgs.map(linhaDe).join('\n\n');
   }
 
+  $('incluiResposta').addEventListener('change', () => { if (msgs.length) desenhar(); });
   [nomeEu, nomeOutro].forEach((el, k) => el.addEventListener('input', () => {
     try { localStorage.setItem(k ? 'cf:colagem:outro' : 'cf:colagem:eu', el.value); } catch (e) {}
     if (msgs.length) { atribuir(); desenhar(); }
