@@ -30,7 +30,10 @@ textarea { width: 100%; height: 150px; font: 14px/1.5 var(--mono); white-space: 
 
 details { margin-top: 22px; }
 summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
+details textarea { height: 160px; margin: 8px 0; font-size: 12px; white-space: pre; }
+details .acoes { margin-bottom: 12px; }
+.opcao { display: flex; align-items: center; gap: 6px; }
+#previa { width: 100%; height: 340px; background: #fff; border: 1px solid var(--line-2); border-radius: var(--r); }
 </style>
 </head>
 <body>
@@ -65,16 +68,23 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
     <span id="aviso" class="rotulo"></span>
   </div>
 
-  <details>
-    <summary>O que veio na área de transferência</summary>
+  <details open>
+    <summary>HTML da colagem</summary>
     <p id="tipos" class="rotulo"></p>
-    <textarea id="bruto" spellcheck="false" readonly aria-label="HTML bruto"></textarea>
+    <textarea id="bruto" spellcheck="false" aria-label="HTML" placeholder="O HTML da colagem aparece aqui. Também dá para colar ou escrever um HTML e executar."></textarea>
+    <div class="acoes">
+      <button id="executar" class="primary">Executar</button>
+      <button id="lerHtml">Ler como conversa</button>
+      <label class="opcao"><input type="checkbox" id="comScripts"> Permitir scripts</label>
+    </div>
+    <iframe id="previa" sandbox title="Resultado do HTML"></iframe>
   </details>
 </main>
 
 <script>
   const $ = id => document.getElementById(id);
   const entrada = $('entrada'), saida = $('saida'), origem = $('origem'), tipos = $('tipos'), bruto = $('bruto');
+  const previa = $('previa');
   const painel = $('painel'), listaMsgs = $('msgs'), nomeEu = $('nomeEu'), nomeOutro = $('nomeOutro'), aviso = $('aviso');
 
   // nomes lembrados neste navegador
@@ -218,6 +228,12 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
     tipos.textContent = 'Formatos: ' + ([...cd.types].join(', ') || 'nenhum');
     bruto.value = html;
     daColagem = true;
+    processar(html, plano);
+    executar();
+  });
+
+  // Transforma o HTML (ou o texto simples) na saída. Serve para a colagem e para o botão "Ler como conversa".
+  function processar(html, plano) {
     const lidas = html ? mensagensDoTeams(html) : null;
     if (lidas) {
       msgs = lidas.map(m => ({ ...m, quem: 'outro', manual: false }));
@@ -228,9 +244,20 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
     } else {
       msgs = []; painel.hidden = true;
       if (html) { saida.value = htmlParaTexto(html); origem.textContent = '(lido do HTML)'; }
-      else { saida.value = plano; origem.textContent = '(texto simples)'; }
+      else { saida.value = plano || ''; origem.textContent = plano ? '(texto simples)' : ''; }
     }
-  });
+  }
+
+  // Executor de HTML: mostra o HTML do campo renderizado numa área isolada (sandbox).
+  // Sem "Permitir scripts" nada executa; com a caixa marcada os scripts rodam, mas sem acesso
+  // à página, aos seus dados salvos nem a outras ferramentas (origem separada).
+  function executar() {
+    previa.setAttribute('sandbox', $('comScripts').checked ? 'allow-scripts' : '');
+    previa.srcdoc = bruto.value;
+  }
+  $('executar').onclick = executar;
+  $('comScripts').addEventListener('change', executar);
+  $('lerHtml').onclick = () => { processar(bruto.value, ''); aviso.textContent = ''; };
   // digitação normal: o de baixo espelha o de cima
   entrada.addEventListener('input', e => {
     if (e.inputType === 'insertFromPaste' && daColagem) { daColagem = false; return; }
@@ -243,7 +270,7 @@ details textarea { height: 160px; margin-top: 8px; font-size: 12px; }
     setTimeout(() => { aviso.textContent = ''; }, 1500);
   };
   $('limpar').onclick = () => {
-    entrada.value = ''; saida.value = ''; bruto.value = ''; tipos.textContent = ''; origem.textContent = '';
+    entrada.value = ''; saida.value = ''; bruto.value = ''; tipos.textContent = ''; origem.textContent = ''; previa.srcdoc = '';
     msgs = []; painel.hidden = true; entrada.focus();
   };
 </script>
