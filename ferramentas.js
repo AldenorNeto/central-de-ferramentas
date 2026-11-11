@@ -8,5 +8,6 @@ const FERRAMENTAS = [
   { id: 'container-redimensionavel', nome: 'Container redimensionável' },
   { id: 'json-minify', nome: 'JSON Minify' },
   { id: 'contador-de-texto', nome: 'Contador de texto' },
+  { id: 'receber-colagem', nome: 'Receber colagem' },
   { id: 'lista-de-tarefas', nome: 'Tarefas', url: 'https://aldenorneto.github.io/lista-de-tarefas/' },
 ];
