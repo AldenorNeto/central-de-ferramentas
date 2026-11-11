@@ -9,5 +9,6 @@ const FERRAMENTAS = [
   { id: 'json-minify', nome: 'JSON Minify' },
   { id: 'contador-de-texto', nome: 'Contador de texto' },
   { id: 'receber-colagem', nome: 'Receber colagem' },
+  { id: 'teste-de-colagem', nome: 'Teste de colagem' },
   { id: 'lista-de-tarefas', nome: 'Tarefas', url: 'https://aldenorneto.github.io/lista-de-tarefas/' },
 ];

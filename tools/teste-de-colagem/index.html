@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Teste de colagem</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Crect%20width%3D%2724%27%20height%3D%2724%27%20fill%3D%27%23131516%27/%3E%3Cpath%20d%3D%27M9%203h6M10%203v6l-5%209a2%202%200%200%200%202%203h10a2%202%200%200%200%202-3l-5-9V3M8%2015h8%27%20fill%3D%27none%27%20stroke%3D%27%23d4a24c%27%20stroke-width%3D%271.8%27%20stroke-linecap%3D%27square%27%20transform%3D%27translate%283%203%29%20scale%28.75%29%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../tema.css">
+<style>
+main { max-width: 1080px; }
+.intro { color: var(--muted); font-size: 13px; margin: -10px 0 22px; max-width: 70ch; }
+.grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+@media (max-width: 480px) { .grade { grid-template-columns: minmax(0, 1fr); } }
+.cartao { display: flex; flex-direction: column; gap: 8px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
+.cartao h2 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.cartao h2 small { font-weight: 400; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.dica { font-size: 12px; color: var(--muted); margin: 0; }
+.entrada { width: 100%; }
+textarea.entrada { height: 84px; }
+.zona { min-height: 84px; padding: 10px; background: var(--bg); border: 1px dashed var(--line-2); border-radius: var(--r); overflow-wrap: anywhere; }
+.zona:focus, .zona.sobre { outline: none; border-color: var(--accent); border-style: solid; }
+.zona:empty::before { content: attr(data-vazio); color: var(--muted); }
+.saida { width: 100%; height: 150px; font: 12px/1.45 var(--mono); white-space: pre; }
+.linha { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ok { color: var(--ok); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Teste de colagem</h1>
+  <p class="intro">Copie o mesmo trecho e cole em cada campo. Cada cartão mostra o que aquele caminho recebeu, para ver quais trazem nome e horário, se algum trouxer.</p>
+
+  <div class="grade">
+
+    <section class="cartao">
+      <h2>1. Caixa de texto <small id="n1"></small></h2>
+      <p class="dica">Campo comum de várias linhas. Só texto simples.</p>
+      <textarea class="entrada" id="e1" placeholder="Ctrl+V aqui" spellcheck="false"></textarea>
+      <textarea class="saida" id="s1" readonly aria-label="Saída 1"></textarea>
+    </section>
+
+    <section class="cartao">
+      <h2>2. Campo de uma linha <small id="n2"></small></h2>
+      <p class="dica">Input simples. O navegador costuma juntar as linhas.</p>
+      <input type="text" class="entrada" id="e2" placeholder="Ctrl+V aqui" spellcheck="false">
+      <textarea class="saida" id="s2" readonly aria-label="Saída 2"></textarea>
+    </section>
+
+    <section class="cartao">
+      <h2>3. Área editável (rica) <small id="n3"></small></h2>
+      <p class="dica">Colagem nativa do navegador, que mantém a estrutura do HTML. Mostra o texto e o HTML resultante.</p>
+      <div class="zona" id="e3" contenteditable="true" data-vazio="Ctrl+V aqui"></div>
+      <textarea class="saida" id="s3" readonly aria-label="Saída 3"></textarea>
+    </section>
+
+    <section class="cartao">
+      <h2>4. Evento de colagem <small id="n4"></small></h2>
+      <p class="dica">Clique na caixa e use Ctrl+V. Lista todos os formatos que o Teams ofereceu e o conteúdo de cada um.</p>
+      <div class="zona" id="e4" tabindex="0" data-vazio="Clique aqui e Ctrl+V"></div>
+      <textarea class="saida" id="s4" readonly aria-label="Saída 4"></textarea>
+    </section>
+
+    <section class="cartao">
+      <h2>5. Antes de inserir <small id="n5"></small></h2>
+      <p class="dica">O evento beforeinput numa área editável. Pode enxergar formatos que o caminho 4 não vê.</p>
+      <div class="zona" id="e5" contenteditable="true" data-vazio="Ctrl+V aqui"></div>
+      <textarea class="saida" id="s5" readonly aria-label="Saída 5"></textarea>
+    </section>
+
+    <section class="cartao">
+      <h2>6. API da área de transferência <small id="n6"></small></h2>
+      <p class="dica">Lê a área de transferência por botão. O navegador pode pedir permissão.</p>
+      <div class="linha"><button id="e6">Ler agora</button></div>
+      <textarea class="saida" id="s6" readonly aria-label="Saída 6"></textarea>
+    </section>
+
+    <section class="cartao">
+      <h2>7. Arrastar e soltar <small id="n7"></small></h2>
+      <p class="dica">Selecione o texto no Teams e arraste até aqui, sem copiar. Esse caminho não passa pelo Ctrl+C do Teams.</p>
+      <div class="zona" id="e7" data-vazio="Solte o texto aqui"></div>
+      <textarea class="saida" id="s7" readonly aria-label="Saída 7"></textarea>
+    </section>
+
+  </div>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const mostrar = (n, texto) => { $('s' + n).value = texto; $('n' + n).textContent = texto ? texto.length + ' caracteres' : ''; };
+
+  // Despeja tudo que um DataTransfer tem (só vale ler dentro do evento).
+  function despejar(dt) {
+    if (!dt) return '(sem dados: o navegador não entregou nada neste evento)';
+    const L = ['formatos: ' + ([...dt.types].join(', ') || 'nenhum')];
+    [...dt.types].forEach(t => {
+      if (t === 'Files') return;
+      let v; try { v = dt.getData(t); } catch (e) { v = '(erro: ' + e.message + ')'; }
+      L.push('\n=== ' + t + ' (' + v.length + ' caracteres) ===\n' + v);
+    });
+    if (dt.items && dt.items.length) L.push('\nitens: ' + [...dt.items].map(i => i.kind + ' ' + (i.type || '-')).join(', '));
+    if (dt.files && dt.files.length) L.push('arquivos: ' + [...dt.files].map(f => f.name + ' ' + f.type + ' ' + f.size + ' B').join(', '));
+    return L.join('\n');
+  }
+
+  // 1 e 2: campos comuns
+  $('e1').addEventListener('input', e => mostrar(1, e.target.value));
+  $('e2').addEventListener('input', e => mostrar(2, e.target.value));
+
+  // 3: área editável rica, deixa o navegador colar e depois lê o resultado
+  $('e3').addEventListener('input', () => {
+    const el = $('e3');
+    mostrar(3, '=== texto (innerText) ===\n' + el.innerText + '\n\n=== HTML (innerHTML) ===\n' + el.innerHTML);
+  });
+
+  // 4: evento de colagem com tudo que vier
+  $('e4').addEventListener('paste', e => {
+    e.preventDefault();
+    const t = despejar(e.clipboardData);
+    $('e4').textContent = (e.clipboardData.getData('text/plain') || '').slice(0, 300);
+    mostrar(4, t);
+  });
+
+  // 5: beforeinput (a colagem segue normalmente)
+  $('e5').addEventListener('beforeinput', e => {
+    if (e.inputType === 'insertFromPaste' || e.inputType === 'insertFromPasteAsQuotation') {
+      mostrar(5, 'inputType: ' + e.inputType + '\n' + despejar(e.dataTransfer) + '\n\ndata: ' + String(e.data));
+    }
+  });
+
+  // 6: API assíncrona
+  $('e6').addEventListener('click', async () => {
+    const L = [];
+    try {
+      const itens = await navigator.clipboard.read();
+      L.push('itens: ' + itens.length);
+      for (const [i, item] of itens.entries()) {
+        L.push('\n--- item ' + (i + 1) + ': ' + item.types.join(', '));
+        for (const t of item.types) {
+          const blob = await item.getType(t);
+          if (t.startsWith('text/')) L.push('\n=== ' + t + ' (' + blob.size + ' bytes) ===\n' + await blob.text());
+          else L.push('\n=== ' + t + ' (' + blob.size + ' bytes, binário) ===');
+        }
+      }
+    } catch (e) { L.push('clipboard.read(): ' + e.name + ': ' + e.message); }
+    try { const t = await navigator.clipboard.readText(); L.push('\n=== readText() (' + t.length + ' caracteres) ===\n' + t); }
+    catch (e) { L.push('\nreadText(): ' + e.name + ': ' + e.message); }
+    mostrar(6, L.join('\n'));
+  });
+
+  // 7: arrastar e soltar
+  const z = $('e7');
+  ['dragenter', 'dragover'].forEach(n => z.addEventListener(n, e => { e.preventDefault(); z.classList.add('sobre'); }));
+  z.addEventListener('dragleave', () => z.classList.remove('sobre'));
+  z.addEventListener('drop', e => {
+    e.preventDefault(); z.classList.remove('sobre');
+    z.textContent = (e.dataTransfer.getData('text/plain') || '').slice(0, 300);
+    mostrar(7, despejar(e.dataTransfer));
+  });
+</script>
+</body>
+</html>

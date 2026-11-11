@@ -8,6 +8,7 @@ const ICONES = {
   'json-minify': 'M9 4H7v6l-2.5 2L7 14v6h2M15 4h2v6l2.5 2-2.5 2v6h-2',
   'contador-de-texto': 'M4 6h16M4 11h16M4 16h9M17 14v6M14 17h6',
   'receber-colagem': 'M9 3h6v4H9zM9 5H6v16h12V5h-3M9 12h6M9 16h6',
+  'teste-de-colagem': 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8',
   'lista-de-tarefas': 'M4 5h4v4H4zM4 15h4v4H4zM11 7h9M11 17h9M5 7l1 1 2-2.5',
   // mixer: famílias
   foco: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 11.5v1',
