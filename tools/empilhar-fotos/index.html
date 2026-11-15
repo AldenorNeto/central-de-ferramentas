@@ -31,7 +31,16 @@ main { max-width: 980px; }
 .todas { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .todas input { width: 84px; }
 #previa { margin-top: 8px; border: 1px solid var(--line); border-radius: var(--r); background: repeating-conic-gradient(#1a1d1f 0 25%, #1f2326 0 50%) 0 0 / 16px 16px; padding: 12px; overflow: auto; max-height: 70vh; }
-#previa canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+#caixa { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; }
+#previa canvas { display: block; max-width: 100%; height: auto; cursor: move; touch-action: none; user-select: none; }
+.corte { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.corte label { display: flex; align-items: center; gap: 6px; }
+.corte input { width: 74px; font-variant-numeric: tabular-nums; }
+.dica { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+.linha-junta { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--accent); pointer-events: none; display: none; }
+#caixa:hover .linha-junta, #caixa.arrasta .linha-junta { display: block; }
+#sel { position: absolute; border: 1px solid var(--accent); background: rgba(212,162,76,.08); pointer-events: none; display: none; }
+#caixa.arrasta #sel { display: block; }
 @media (max-width: 600px) {
   #lista li { grid-template-columns: 22px 64px 1fr; }
   .mini { width: 64px; height: 48px; }
@@ -60,7 +69,8 @@ main { max-width: 980px; }
     <span id="estado" role="status"></span>
   </div>
 
-  <div id="previa" hidden><canvas id="tela"></canvas></div>
+  <p class="dica" id="dica" hidden>Na imagem abaixo, arraste uma foto para o lado para alinhá-la, ou para cima para cortar o começo dela (some a linha repetida). Os mesmos valores estão nos campos de cada foto.</p>
+  <div id="previa" hidden><div id="caixa"><canvas id="tela"></canvas><div id="sel"></div></div></div>
 </main>
 
 <script>
@@ -86,11 +96,24 @@ main { max-width: 980px; }
     for (const f of imgs) {
       try {
         const bmp = await createImageBitmap(f);   // respeita a rotação do celular (EXIF)
-        itens.push({ id: ++seq, nome: f.name || 'colada', bmp, w: bmp.width, h: bmp.height, alt: bmp.height });
+        itens.push({ id: ++seq, nome: f.name || 'colada', bmp, w: bmp.width, h: bmp.height, alt: bmp.height, ct: 0, cb: 0, dx: 0 });
       } catch (e) { falhas++; }
     }
     dizer(falhas ? falhas + ' arquivo(s) não puderam ser lidos.' : '', !!falhas);
     desenhar();
+  }
+
+  // mantém pelo menos 8 px visíveis
+  function limitar(it) {
+    it.ct = Math.max(0, Math.min(it.ct, it.alt - 8 - it.cb));
+    it.cb = Math.max(0, Math.min(it.cb, it.alt - 8 - it.ct));
+  }
+  // escreve os valores do item nos campos da linha (sem recriar a lista)
+  function campos(it, li) {
+    li = li || lista.querySelector('li[data-id="' + it.id + '"]'); if (!li) return;
+    const set = (c, v) => { const e = li.querySelector('[data-c=' + c + ']'); if (e && document.activeElement !== e) e.value = Math.round(v); };
+    set('alt', it.alt); set('ct', it.ct); set('cb', it.cb); set('dx', it.dx);
+    li.querySelector('.alt .rotulo').textContent = '× ' + Math.round(it.w * it.alt / it.h) + ' px de largura';
   }
 
   function renderLista() {
@@ -100,7 +123,10 @@ main { max-width: 980px; }
       li.draggable = true; li.dataset.id = it.id;
       li.innerHTML = '<span class="pega" title="Arraste para mudar a ordem">' + ICO.pega + '</span>' +
         '<canvas class="mini"></canvas>' +
-        '<div class="info"><b></b><div class="alt"><label>Altura</label><input type="number" min="16" max="8000" step="10"><span class="rotulo"></span></div></div>' +
+        '<div class="info"><b></b><div class="alt"><label>Altura</label><input type="number" data-c="alt" min="16" max="8000" step="10"><span class="rotulo"></span></div>' +
+        '<div class="corte"><label>Cortar topo<input type="number" data-c="ct" min="0" step="1"></label>' +
+        '<label>Cortar base<input type="number" data-c="cb" min="0" step="1"></label>' +
+        '<label>Lateral<input type="number" data-c="dx" step="1"></label></div></div>' +
         '<div class="btns"><button data-a="sobe" title="Subir" aria-label="Subir">' + ICO.sobe + '</button>' +
         '<button data-a="desce" title="Descer" aria-label="Descer">' + ICO.desce + '</button>' +
         '<button data-a="fora" class="danger" title="Remover" aria-label="Remover">' + ICO.fora + '</button></div>';
@@ -108,14 +134,22 @@ main { max-width: 980px; }
       const m = li.querySelector('canvas.mini'); m.width = 96; m.height = 64;
       const k = Math.min(96 / it.w, 64 / it.h), mw = it.w * k, mh = it.h * k;
       m.getContext('2d').drawImage(it.bmp, (96 - mw) / 2, (64 - mh) / 2, mw, mh);
-      const inp = li.querySelector('input'), rot = li.querySelector('.alt .rotulo');
-      inp.value = it.alt;
-      const larg = () => { rot.textContent = '× ' + Math.round(it.w * it.alt / it.h) + ' px de largura'; };
-      larg();
-      inp.addEventListener('input', () => {
-        const v = Math.round(+inp.value);
-        if (v >= 16 && v <= 8000) { it.alt = v; larg(); montar(); }
+      li.querySelectorAll('input[data-c]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const c = inp.dataset.c, v = Math.round(+inp.value);
+          if (inp.value === '' || isNaN(v)) return;
+          if (c === 'alt') {
+            if (v < 16 || v > 8000) return;
+            const f = v / it.alt; it.ct *= f; it.cb *= f; it.dx *= f; it.alt = v;
+            li.querySelector('[data-c=ct]').value = Math.round(it.ct);
+            li.querySelector('[data-c=cb]').value = Math.round(it.cb);
+            li.querySelector('[data-c=dx]').value = Math.round(it.dx);
+          } else if (c === 'dx') it.dx = v;
+          else it[c] = Math.max(0, v);
+          limitar(it); campos(it, li); montar();
+        });
       });
+      campos(it, li);
       li.querySelector('[data-a=sobe]').disabled = i === 0;
       li.querySelector('[data-a=desce]').disabled = i === itens.length - 1;
       lista.append(li);
@@ -159,19 +193,57 @@ main { max-width: 980px; }
   function montar() {
     const prev = $('previa');
     if (!itens.length) { prev.hidden = true; $('baixar').disabled = $('copiar').disabled = true; return; }
-    const dims = itens.map(it => ({ it, w: Math.round(it.w * it.alt / it.h), h: it.alt }));
-    const W = Math.max(...dims.map(d => d.w)), H = dims.reduce((s, d) => s + d.h, 0);
+    // cada foto: largura proporcional à altura escolhida; sem deslocamento fica centralizada
+    const dims = itens.map(it => { limitar(it); return { it, w: Math.round(it.w * it.alt / it.h), h: Math.round(it.alt - it.ct - it.cb) }; });
+    const Wmax = Math.max(...dims.map(d => d.w));
+    dims.forEach(d => { d.esq = (Wmax - d.w) / 2 + d.it.dx; });
+    const minL = Math.min(0, ...dims.map(d => d.esq)), maxR = Math.max(Wmax, ...dims.map(d => d.esq + d.w));
+    const W = Math.round(maxR - minL), H = dims.reduce((s, d) => s + d.h, 0);
     if (W > LIMITE || H > LIMITE) {
-      prev.hidden = true; $('baixar').disabled = $('copiar').disabled = true;
+      prev.hidden = true; $('dica').hidden = true; $('baixar').disabled = $('copiar').disabled = true;
       dizer('A imagem final ficaria com ' + W + ' × ' + H + ' px, grande demais. Diminua as alturas.', true); return;
     }
     tela.width = W; tela.height = H;
     const c = tela.getContext('2d'); c.imageSmoothingQuality = 'high';
     let y = 0;
-    dims.forEach(d => { c.drawImage(d.it.bmp, Math.round((W - d.w) / 2), y, d.w, d.h); y += d.h; });
-    prev.hidden = false; $('baixar').disabled = $('copiar').disabled = false;
+    lay = dims.map(d => {
+      const k = d.it.alt / d.it.h, x = Math.round(d.esq - minL);
+      c.drawImage(d.it.bmp, 0, d.it.ct / k, d.it.w, d.h / k, x, y, d.w, d.h);   // recorte feito na foto original
+      const r = { it: d.it, x, y, w: d.w, h: d.h }; y += d.h; return r;
+    });
+    // linhas tracejadas nas emendas (só na tela, não vão para a imagem)
+    caixa.querySelectorAll('.linha-junta').forEach(e => e.remove());
+    lay.slice(1).forEach(r => { const l = document.createElement('div'); l.className = 'linha-junta'; l.style.top = (r.y / H * 100) + '%'; caixa.append(l); });
+    prev.hidden = false; $('dica').hidden = false; $('baixar').disabled = $('copiar').disabled = false;
     dizer('Imagem final: ' + W + ' × ' + H + ' px');
   }
+
+  // arrastar na prévia: horizontal alinha a foto, vertical corta o começo dela
+  let lay = [], gesto = null;
+  const caixa = $('caixa'), sel = $('sel');
+  const escala = () => tela.width / tela.getBoundingClientRect().width;
+  function marcar(r) {
+    sel.style.left = (r.x / tela.width * 100) + '%'; sel.style.width = (r.w / tela.width * 100) + '%';
+    sel.style.top = (r.y / tela.height * 100) + '%'; sel.style.height = (r.h / tela.height * 100) + '%';
+  }
+  tela.addEventListener('pointerdown', e => {
+    const b = tela.getBoundingClientRect(), s = escala(), y = (e.clientY - b.top) * s;
+    const r = lay.find(r => y >= r.y && y < r.y + r.h); if (!r) return;
+    gesto = { r, px: e.clientX, py: e.clientY, eixo: null, dx0: r.it.dx, ct0: r.it.ct, s };
+    tela.setPointerCapture(e.pointerId); caixa.classList.add('arrasta'); marcar(r); e.preventDefault();
+  });
+  tela.addEventListener('pointermove', e => {
+    if (!gesto) return;
+    const ddx = (e.clientX - gesto.px) * gesto.s, ddy = (e.clientY - gesto.py) * gesto.s;
+    if (!gesto.eixo && Math.max(Math.abs(ddx), Math.abs(ddy)) > 6 * gesto.s) gesto.eixo = Math.abs(ddx) > Math.abs(ddy) ? 'x' : 'y';
+    const it = gesto.r.it;
+    if (gesto.eixo === 'x') it.dx = Math.round(gesto.dx0 + ddx);
+    else if (gesto.eixo === 'y') { it.ct = Math.max(0, Math.round(gesto.ct0 - ddy)); limitar(it); }
+    else return;
+    campos(it); montar(); const nr = lay.find(r => r.it === it); if (nr) marcar(nr);
+  });
+  const fim = () => { gesto = null; caixa.classList.remove('arrasta'); };
+  tela.addEventListener('pointerup', fim); tela.addEventListener('pointercancel', fim);
   function desenhar() { renderLista(); montar(); }
 
   $('anexar').onclick = () => $('arquivos').click();
@@ -180,7 +252,7 @@ main { max-width: 980px; }
   $('aplicarTodas').onclick = () => {
     const v = Math.round(+$('altTodas').value);
     if (!(v >= 16 && v <= 8000)) { dizer('Informe uma altura entre 16 e 8000 px.', true); return; }
-    itens.forEach(i => { i.alt = v; }); desenhar();
+    itens.forEach(i => { const f = v / i.alt; i.ct *= f; i.cb *= f; i.dx *= f; i.alt = v; }); desenhar();
   };
 
   // soltar arquivos e colar
