@@ -8,7 +8,7 @@ const FERRAMENTAS = [
   { id: 'container-redimensionavel', nome: 'Container redimensionável' },
   { id: 'json-minify', nome: 'JSON Minify' },
   { id: 'contador-de-texto', nome: 'Contador de texto' },
-  { id: 'receber-colagem', nome: 'Receber colagem' },
+  { id: 'receber-colagem', nome: 'Transcrever conversa' },
   { id: 'ajuste-de-prompt', nome: 'Ajuste de prompt' },
   { id: 'resumo-em-anotacao', nome: 'Vídeo para caderno' },
   { id: 'empilhar-fotos', nome: 'Empilhar fotos' },
