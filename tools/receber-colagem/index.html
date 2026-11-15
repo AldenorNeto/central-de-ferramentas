@@ -13,8 +13,17 @@
 .zona input { display: none; }
 #fotos { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 0; padding: 0; list-style: none; }
 #fotos li { position: relative; }
-#fotos img { height: 48px; border-radius: 2px; border: 1px solid var(--line-2); display: block; }
-.tirar { position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; padding: 0; justify-content: center; border-radius: 50%; font-size: 13px; line-height: 1; }
+#fotos { gap: 12px; }
+.ampliar { padding: 0; border: 0; background: none; cursor: zoom-in; display: block; }
+#fotos img { height: 72px; border-radius: 3px; border: 1px solid var(--line-2); display: block; }
+.ampliar:hover img, .ampliar:focus-visible img { border-color: var(--accent); }
+dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line-2); border-radius: var(--r); padding: 14px; max-width: 94vw; }
+dialog::backdrop { background: rgba(0, 0, 0, .75); }
+#verImg { display: block; max-width: 100%; max-height: 74vh; margin: 0 auto; border-radius: 3px; }
+.verAcoes { display: flex; gap: 10px; margin-top: 12px; }
+.verAcoes .danger { margin-left: auto; }
+.tirar { position: absolute; top: -9px; right: -9px; width: 24px; height: 24px; padding: 0; justify-content: center; border-radius: 50%; font-size: 16px; line-height: 1; background: var(--raised); border-color: var(--line-2); }
+.tirar:hover { background: var(--bad); border-color: var(--bad); color: var(--bg); }
 .envio { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 12px 0 14px; }
 #estado { min-height: 1.4em; }
 #estado.erro { color: var(--bad); }
@@ -47,6 +56,14 @@ textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: 
     <label class="rotulo">Outra pessoa <input type="text" id="outroNome" value="Outro" autocomplete="off"></label>
   </div>
 </main>
+
+<dialog id="ver">
+  <img id="verImg" alt="Foto anexada">
+  <div class="verAcoes">
+    <button type="button" id="verFechar">Fechar</button>
+    <button type="button" id="verExcluir" class="danger">Excluir esta foto</button>
+  </div>
+</dialog>
 
 <script>
   const $ = id => document.getElementById(id);
@@ -175,6 +192,13 @@ textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: 
   const pendentes = () => imagens.filter(a => !linhasDe.has(a)); // fotos que ainda não foram enviadas
   const atualizarEnviar = () => { $('enviar').disabled = ocupado || !pendentes().length; };
 
+  // foto ampliada: clicar fora, Esc ou Fechar voltam; Excluir tira a foto da fila
+  const janela = $('ver'); let emVista = null;
+  function ampliar(a) { emVista = a; $('verImg').src = a._url; $('verExcluir').disabled = ocupado; janela.showModal(); }
+  $('verFechar').onclick = () => janela.close();
+  $('verExcluir').onclick = () => { const a = emVista; janela.close(); if (a) tirar(a); };
+  janela.addEventListener('click', e => { if (e.target === janela) janela.close(); });
+
   function tirar(a) {
     if (ocupado) return;
     if (a._url) URL.revokeObjectURL(a._url);
@@ -185,10 +209,11 @@ textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: 
 
   function desenharFotos() {
     fotos.replaceChildren(...imagens.map(a => {
-      const li = document.createElement('li'), im = document.createElement('img'), x = document.createElement('button');
+      const li = document.createElement('li'), im = document.createElement('img'), ver = document.createElement('button'), x = document.createElement('button');
       im.src = a._url || (a._url = URL.createObjectURL(a)); im.alt = '';
-      x.className = 'tirar'; x.type = 'button'; x.textContent = '×'; x.title = 'Tirar esta foto'; x.setAttribute('aria-label', 'Tirar esta foto'); x.onclick = () => tirar(a);
-      li.append(im, x); return li;
+      ver.className = 'ampliar'; ver.type = 'button'; ver.title = 'Ampliar a foto'; ver.setAttribute('aria-label', 'Ampliar a foto'); ver.append(im); ver.onclick = () => ampliar(a);
+      x.className = 'tirar'; x.type = 'button'; x.textContent = '×'; x.title = 'Excluir esta foto'; x.setAttribute('aria-label', 'Excluir esta foto'); x.onclick = () => tirar(a);
+      li.append(ver, x); return li;
     }));
   }
 
