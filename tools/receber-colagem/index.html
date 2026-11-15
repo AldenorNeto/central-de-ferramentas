@@ -49,6 +49,15 @@ details .acoes { margin-bottom: 12px; }
     <textarea id="entrada" spellcheck="false" autofocus></textarea>
   </div>
 
+    <div class="print">
+      <label for="arqPrint">Print da conversa (opcional): escolha o arquivo, ou cole a imagem no campo acima com Ctrl+V. Pode vir antes ou depois da conversa.</label>
+      <div class="acoes">
+        <input type="file" id="arqPrint" accept="image/*" multiple>
+        <label class="opcao"><input type="checkbox" id="direitaEhEu" checked> Minhas mensagens ficam à direita</label>
+      </div>
+      <p id="estadoOcr" class="rotulo"></p>
+    </div>
+
   <section id="painel" hidden>
     <div class="nomes">
       <label>Seu nome <input type="text" id="nomeEu" value="Aldenor" autocomplete="off"></label>
@@ -58,14 +67,6 @@ details .acoes { margin-bottom: 12px; }
     <div class="opcoes">
       <label><input type="checkbox" id="trocaSeguintes"> Trocar também as seguintes sem marca</label>
       <label><input type="checkbox" id="incluiResposta"> Incluir a citação das respostas</label>
-    </div>
-    <div class="print">
-      <label for="arqPrint">Print da conversa (opcional): cole a imagem aqui com Ctrl+V ou escolha o arquivo. Lê quem falou pela posição dos balões.</label>
-      <div class="acoes">
-        <input type="file" id="arqPrint" accept="image/*" multiple>
-        <label class="opcao"><input type="checkbox" id="direitaEhEu" checked> Minhas mensagens ficam à direita</label>
-      </div>
-      <p id="estadoOcr" class="rotulo"></p>
     </div>
     <div id="msgs"></div>
   </section>
@@ -328,8 +329,15 @@ details .acoes { margin-bottom: 12px; }
       estado.textContent = 'Print ' + ordem + '/' + total + ': marquei ' + marcadas + ' de ' + msgs.length + ' mensagens pelos cabeçalhos (' + cabecalhos.length + ' cabeçalhos, ' + linhas.length + ' linhas lidas). As que não aparecem no print ficam como estavam.';
     } catch (e) { estado.textContent = 'Erro ao ler o print: ' + e.message; }
   }
+  let pendentes = []; // prints que chegaram antes da conversa
   async function lerPrints(arquivos) {
     const imgs = [...arquivos].filter(f => f.type.startsWith('image/'));
+    if (!imgs.length) return;
+    if (!msgs.length) {
+      pendentes.push(...imgs);
+      $('estadoOcr').textContent = pendentes.length + (pendentes.length === 1 ? ' print guardado' : ' prints guardados') + '. Agora cole a conversa do Teams no campo de cima e eu leio.';
+      return;
+    }
     for (let i = 0; i < imgs.length; i++) await lerPrint(imgs[i], i + 1, imgs.length);
   }
   $('arqPrint').addEventListener('change', e => { lerPrints(e.target.files); e.target.value = ''; });
@@ -339,13 +347,15 @@ details .acoes { margin-bottom: 12px; }
   entrada.addEventListener('paste', e => {
     const cd = e.clipboardData; if (!cd) return;
     // imagem colada (print): vai para o leitor, não para o campo
-    if (cd.files && cd.files.length && [...cd.files].some(f => f.type.startsWith('image/'))) { e.preventDefault(); lerPrints(cd.files); return; }
+    const soImagem = cd.files && [...cd.files].some(f => f.type.startsWith('image/')) && !cd.types.includes('text/html') && !cd.types.includes('text/plain');
+    if (soImagem) { e.preventDefault(); lerPrints(cd.files); return; }
     const html = cd.getData('text/html'), plano = cd.getData('text/plain');
     tipos.textContent = 'Formatos: ' + ([...cd.types].join(', ') || 'nenhum');
     bruto.value = html;
     daColagem = true;
-    processar(html, plano);
+    try { processar(html, plano); } catch (err) { origem.textContent = '(erro ao ler a colagem: ' + err.message + ')'; }
     executar();
+    if (msgs.length && pendentes.length) { const fila = pendentes; pendentes = []; lerPrints(fila); }
   });
 
   // Transforma o HTML (ou o texto simples) na saída. Serve para a colagem e para o botão "Ler como conversa".
@@ -387,7 +397,7 @@ details .acoes { margin-bottom: 12px; }
   };
   $('limpar').onclick = () => {
     entrada.value = ''; saida.value = ''; bruto.value = ''; tipos.textContent = ''; origem.textContent = ''; previa.srcdoc = '';
-    msgs = []; painel.hidden = true; entrada.focus();
+    msgs = []; pendentes = []; $('estadoOcr').textContent = ''; painel.hidden = true; entrada.focus();
   };
 </script>
 </body>
