@@ -12,7 +12,18 @@
   .casca { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
 
   nav { min-width: 0; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--line); min-height: 0; }
-  .marca { padding: 20px 18px 14px; font-weight: 600; letter-spacing: .01em; }
+  .marca { display: flex; align-items: center; justify-content: space-between; padding: 14px 10px 10px 18px; font-weight: 600; letter-spacing: .01em; }
+  #btnConfig { background: transparent; border: 0; padding: 6px; color: var(--muted); }
+  #btnConfig:hover { color: var(--text); background: var(--raised); }
+  dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line-2); border-radius: var(--r); padding: 20px; width: min(420px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0, 0, 0, .6); }
+  dialog h2 { margin-bottom: 14px; }
+  dialog label { display: block; margin: 0 0 6px; }
+  dialog input { width: 100%; font-family: var(--mono); }
+  .aviso-chave { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+  .estado-chave { margin: 10px 0 0; min-height: 1.4em; }
+  .linha-botoes { display: flex; gap: 8px; margin-top: 14px; }
+  .linha-botoes .danger { margin-left: auto; }
   .lista { list-style: none; margin: 0; padding: 4px 8px; overflow-y: auto; flex: 1; }
   .lista a {
     display: flex; align-items: center; gap: 12px; padding: 9px 10px; margin-bottom: 1px;
@@ -32,7 +43,9 @@
   @media (max-width: 720px) {
     .casca { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
     nav { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); }
-    .marca, .rodape { display: none; }
+    .rodape { display: none; }
+    .marca { order: 2; padding: 0 10px; border-left: 1px solid var(--line); }
+    .marca span { display: none; }
     .lista { display: flex; overflow-x: auto; overflow-y: hidden; padding: 0; scrollbar-width: none; }
     .lista::-webkit-scrollbar { display: none; }
     .lista li { flex: none; }
@@ -44,15 +57,31 @@
 <body>
 <div class="casca">
   <nav aria-label="Ferramentas">
-    <div class="marca">Central</div>
+    <div class="marca"><span>Central</span><button id="btnConfig" type="button" title="Configurações" aria-label="Configurações"></button></div>
     <ul class="lista" id="lista"></ul>
     <div class="rodape"><a href="https://github.com/AldenorNeto/central-de-ferramentas" target="_blank" rel="noopener">Código</a></div>
   </nav>
   <div id="quadros"></div>
 </div>
 
+<dialog id="dlgConfig">
+  <form method="dialog" id="formConfig" autocomplete="off">
+    <h2>Configurações</h2>
+    <label for="campoChave">Chave da OpenAI</label>
+    <input type="password" id="campoChave" placeholder="sk-…" spellcheck="false" autocomplete="off">
+    <p id="estadoChave" class="rotulo estado-chave"></p>
+    <p class="aviso-chave">Fica salva só neste navegador, em texto simples, e é usada só para falar com a OpenAI. Use uma chave com limite de gasto.</p>
+    <div class="linha-botoes">
+      <button type="submit" class="primary">Salvar</button>
+      <button type="button" id="fecharConfig">Fechar</button>
+      <button type="button" id="apagarChave" class="danger">Remover chave</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="ferramentas.js"></script>
 <script src="icones.js"></script>
+<script src="chave.js"></script>
 <script>
   const lista = document.getElementById('lista'), quadros = document.getElementById('quadros');
   const guardar = { ler() { try { return localStorage.getItem('cf:ultima'); } catch (e) { return null; } },
@@ -66,8 +95,26 @@
     li.append(a); lista.append(li);
   });
 
+  // ---------- configurações (janela com a chave da OpenAI) ----------
+  const dlg = document.getElementById('dlgConfig'), campo = document.getElementById('campoChave'), estadoChave = document.getElementById('estadoChave');
+  document.getElementById('btnConfig').innerHTML = icone('config');
+  const mostrarEstado = () => { estadoChave.textContent = CHAVE_OPENAI.existe() ? 'Chave salva: ' + CHAVE_OPENAI.mascarada() : 'Nenhuma chave salva.'; };
+  function abrirConfig() { campo.value = ''; mostrarEstado(); if (!dlg.open) dlg.showModal(); campo.focus(); }
+  document.getElementById('btnConfig').onclick = abrirConfig;
+  document.getElementById('fecharConfig').onclick = () => dlg.close();
+  document.getElementById('apagarChave').onclick = () => { CHAVE_OPENAI.apagar(); campo.value = ''; mostrarEstado(); };
+  document.getElementById('formConfig').addEventListener('submit', () => {
+    const v = campo.value.trim();
+    if (v && !CHAVE_OPENAI.gravar(v)) alert('Não consegui salvar: o navegador bloqueou o armazenamento.');
+    campo.value = '';
+  });
+
+  let atual = null;
   function abrir() {
-    const pedida = decodeURIComponent(location.hash.slice(1));
+    let pedida = decodeURIComponent(location.hash.slice(1));
+    // links antigos e das ferramentas ("#chave-openai") abrem a janela em vez de trocar de ferramenta
+    const config = pedida === 'chave-openai' || pedida === 'config';
+    if (config) pedida = atual || guardar.ler() || '';
     const alvo = FERRAMENTAS.find(f => f.id === pedida) || FERRAMENTAS.find(f => f.id === guardar.ler()) || FERRAMENTAS[0];
     lista.querySelectorAll('a').forEach(a => {
       if (a.dataset.id === alvo.id) { a.setAttribute('aria-current', 'page'); a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
@@ -84,7 +131,9 @@
     quadros.querySelectorAll('iframe').forEach(f => { f.hidden = f !== q; });
     document.title = alvo.nome + ' · Central de ferramentas';
     guardar.gravar(alvo.id);
-    if (pedida !== alvo.id) history.replaceState(null, '', '#' + alvo.id);
+    atual = alvo.id;
+    if (location.hash.slice(1) !== alvo.id) history.replaceState(null, '', '#' + alvo.id);
+    if (config) abrirConfig();
   }
   window.addEventListener('hashchange', abrir);
   abrir();

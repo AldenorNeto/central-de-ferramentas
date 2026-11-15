@@ -1,16 +1,17 @@
-// Ícones em SVG (traço fino, pontas retas). Uso: icone('relogio') devolve o <svg> pronto.
+// Ícones em SVG. Os das ferramentas, da chave e da engrenagem vêm do Tabler Icons (MIT, tabler.io/icons);
+// os do mixer foram desenhados aqui. Uso: icone('nome') devolve o <svg> pronto.
 const ICONES = {
   // ferramentas
-  'mixer-de-sons': 'M6 3v18M12 3v18M18 3v18M3.5 15h5M9.5 8h5M15.5 17h5',
-  'diferenca-horarios': 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5.5l3.5 2',
-  'contagem-regressiva': 'M7 3h10M7 21h10M8 3v4l4 5-4 5v4M16 3v4l-4 5 4 5v4',
-  'container-redimensionavel': 'M4 4h16v16H4zM20 12l-8 8M20 16.5l-3.5 3.5',
-  'json-minify': 'M9 4H7v6l-2.5 2L7 14v6h2M15 4h2v6l2.5 2-2.5 2v6h-2',
-  'contador-de-texto': 'M4 6h16M4 11h16M4 16h9M17 14v6M14 17h6',
-  'receber-colagem': 'M9 3h6v4H9zM9 5H6v16h12V5h-3M9 12h6M9 16h6',
-  'resumo-em-anotacao': 'M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h7M9 8h3',
-  'ajuste-de-prompt': 'M4 20L16 8M14 4v3M12.5 5.5h3M19 12v3M17.5 13.5h3',
-  'lista-de-tarefas': 'M4 5h4v4H4zM4 15h4v4H4zM11 7h9M11 17h9M5 7l1 1 2-2.5',
+  'mixer-de-sons': 'M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0 M6 4v4 M6 12v8 M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0 M12 4v10 M12 18v2 M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0 M18 4v1 M18 9v11',
+  'diferenca-horarios': 'M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M12 7v5l3 3',
+  'contagem-regressiva': 'M6.5 7h11 M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z',
+  'container-redimensionavel': 'M16 4l4 0l0 4 M14 10l6 -6 M8 20l-4 0l0 -4 M4 20l6 -6',
+  'json-minify': 'M7 4a2 2 0 0 0 -2 2v3a2 3 0 0 1 -2 3a2 3 0 0 1 2 3v3a2 2 0 0 0 2 2 M17 4a2 2 0 0 1 2 2v3a2 3 0 0 0 2 3a2 3 0 0 0 -2 3v3a2 2 0 0 1 -2 2',
+  'contador-de-texto': 'M3 16v-6a2 2 0 1 1 4 0v6 M3 13h4 M10 8v6a2 2 0 1 0 4 0v-1a2 2 0 1 0 -4 0v1 M20.732 12a2 2 0 0 0 -3.732 1v1a2 2 0 0 0 3.726 1.01',
+  'receber-colagem': 'M15 8h.01 M6 13l2.644 -2.644a1.21 1.21 0 0 1 1.712 0l3.644 3.644 M13 13l1.644 -1.644a1.21 1.21 0 0 1 1.712 0l1.644 1.644 M4 8v-2a2 2 0 0 1 2 -2h2 M4 16v2a2 2 0 0 0 2 2h2 M16 4h2a2 2 0 0 1 2 2v2 M16 20h2a2 2 0 0 0 2 -2v-2',
+  'resumo-em-anotacao': 'M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v18 M13 8l2 0 M13 12l2 0',
+  'ajuste-de-prompt': 'M6 21l15 -15l-3 -3l-15 15l3 3 M15 6l3 3 M9 3a2 2 0 0 0 2 2a2 2 0 0 0 -2 2a2 2 0 0 0 -2 -2a2 2 0 0 0 2 -2 M19 13a2 2 0 0 0 2 2a2 2 0 0 0 -2 2a2 2 0 0 0 -2 -2a2 2 0 0 0 2 -2',
+  'lista-de-tarefas': 'M9.615 20h-2.615a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8 M14 19l2 2l4 -4 M9 8h4 M9 12h2',
   // mixer: famílias
   foco: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 11.5v1',
   clima: 'M7 17a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 8.5a3.8 3.8 0 0 1 .5 8.5zM8 20l1-2M12 20l1-2M16 20l1-2',
@@ -34,14 +35,14 @@ const ICONES = {
   cave: 'M12 3v5M12 8a2.5 2.5 0 0 1 2.5 2.5c0 1.5-1.5 3-2.5 3.5-1-.5-2.5-2-2.5-3.5A2.5 2.5 0 0 1 12 8zM6 21h12M8 17h8',
   fountain: 'M12 4v8M12 12c-3 0-4-3-6-3M12 12c3 0 4-3 6-3M4 14h16l-2 6H6z',
   // interface
+  config: 'M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0',
   volume: 'M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11',
   salvar: 'M5 3h12l3 3v15H5zM8 3v6h8V3M8 21v-7h8v7',
   carregar: 'M4 8h6l2 2h8v10H4zM4 8V4h6l2 2',
   parar: 'M6 6h12v12H6z',
   livro: 'M5 4h13v16H5zM5 17h13M8 8h7',
   menu: 'M4 7h16M4 12h16M4 17h16',
-  chave: 'M8 15a4 4 0 1 1 3.9-4.9L20 12v3h-3v3h-3v-2.2L11.9 15zM7.5 10.5h.01',
-  'chave-openai': 'M8 15a4 4 0 1 1 3.9-4.9L20 12v3h-3v3h-3v-2.2L11.9 15zM7.5 10.5h.01',
+  chave: 'M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z M15 9h.01',
   mais: 'M12 5v14M5 12h14',
   fechar: 'M6 6l12 12M18 6L6 18',
 };

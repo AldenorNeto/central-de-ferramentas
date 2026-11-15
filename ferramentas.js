@@ -11,6 +11,5 @@ const FERRAMENTAS = [
   { id: 'receber-colagem', nome: 'Receber colagem' },
   { id: 'ajuste-de-prompt', nome: 'Ajuste de prompt' },
   { id: 'resumo-em-anotacao', nome: 'Vídeo para caderno' },
-  { id: 'chave-openai', nome: 'Chave da OpenAI' },
   { id: 'lista-de-tarefas', nome: 'Tarefas', url: 'https://aldenorneto.github.io/lista-de-tarefas/' },
 ];
