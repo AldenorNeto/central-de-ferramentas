@@ -9,6 +9,7 @@ const ICONES = {
   'contador-de-texto': 'M4 6h16M4 11h16M4 16h9M17 14v6M14 17h6',
   'receber-colagem': 'M9 3h6v4H9zM9 5H6v16h12V5h-3M9 12h6M9 16h6',
   'teste-de-colagem': 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8',
+  'ajuste-de-prompt': 'M4 20L16 8M14 4v3M12.5 5.5h3M19 12v3M17.5 13.5h3',
   'lista-de-tarefas': 'M4 5h4v4H4zM4 15h4v4H4zM11 7h9M11 17h9M5 7l1 1 2-2.5',
   // mixer: famílias
   foco: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 11.5v1',
@@ -39,6 +40,7 @@ const ICONES = {
   parar: 'M6 6h12v12H6z',
   livro: 'M5 4h13v16H5zM5 17h13M8 8h7',
   menu: 'M4 7h16M4 12h16M4 17h16',
+  chave: 'M8 15a4 4 0 1 1 3.9-4.9L20 12v3h-3v3h-3v-2.2L11.9 15zM7.5 10.5h.01',
   mais: 'M12 5v14M5 12h14',
   fechar: 'M6 6l12 12M18 6L6 18',
 };

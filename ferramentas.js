@@ -10,5 +10,6 @@ const FERRAMENTAS = [
   { id: 'contador-de-texto', nome: 'Contador de texto' },
   { id: 'receber-colagem', nome: 'Receber colagem' },
   { id: 'teste-de-colagem', nome: 'Teste de colagem' },
+  { id: 'ajuste-de-prompt', nome: 'Ajuste de prompt' },
   { id: 'lista-de-tarefas', nome: 'Tarefas', url: 'https://aldenorneto.github.io/lista-de-tarefas/' },
 ];
