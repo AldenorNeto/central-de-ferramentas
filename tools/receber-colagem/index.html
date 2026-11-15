@@ -8,337 +8,110 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Crect%20width%3D%2724%27%20height%3D%2724%27%20fill%3D%27%23131516%27/%3E%3Cpath%20d%3D%27M9%203h6v4H9zM9%205H6v16h12V5h-3M9%2012h6M9%2016h6%27%20fill%3D%27none%27%20stroke%3D%27%23d4a24c%27%20stroke-width%3D%271.8%27%20stroke-linecap%3D%27square%27%20transform%3D%27translate%283%203%29%20scale%28.75%29%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../../tema.css">
 <style>
-.passo { margin-bottom: 26px; }
-.passo > h2 { margin-bottom: 10px; }
-textarea { width: 100%; height: 150px; font: 14px/1.5 var(--mono); white-space: pre; tab-size: 4; }
-.acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-.opcao { display: flex; align-items: center; gap: 6px; }
-.rotulo.estado { min-height: 1.2em; }
-
-.zonaPrint { min-height: 64px; padding: 12px; background: var(--surface); border: 1px dashed var(--line-2); border-radius: var(--r); color: var(--muted); overflow: hidden; max-height: 64px; }
-.zonaPrint:focus { outline: none; border-color: var(--accent); border-style: solid; }
-.zonaPrint:empty::before { content: attr(data-vazio); }
-#prints { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-#prints li { display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; align-items: center; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
-#prints img { width: 72px; height: 48px; object-fit: cover; border-radius: 2px; background: var(--bg); }
-#prints .nomeArq { font-size: 13px; overflow-wrap: anywhere; }
-#prints .situacao { font-size: 12px; color: var(--muted); }
-#prints .situacao.ok { color: var(--ok); }
-#prints .situacao.erro { color: var(--bad); }
-#prints button { padding: 4px 9px; }
-
-.nomes { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.nomes label { display: flex; flex-direction: column; gap: 4px; }
-.nomes input { width: 180px; }
-.opcoes { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
-#msgs { display: flex; flex-direction: column; gap: 6px; }
-.msg { display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: start; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
-.msg .lado { display: flex; flex-direction: column; gap: 4px; }
-.msg .quem { justify-content: center; width: 100%; padding: 5px 8px; font-size: 13px; }
-.msg.eu .quem { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-.msg .fonte { font-size: 11px; color: var(--muted); text-align: center; }
-.msg .corpo { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
-.msg .resposta { color: var(--muted); font-size: 12px; margin-bottom: 4px; border-left: 2px solid var(--line-2); padding-left: 8px; }
-@media (max-width: 560px) { .msg { grid-template-columns: 1fr; } }
-
-details { margin-top: 18px; }
-summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-details textarea { height: 160px; margin: 8px 0; font-size: 12px; white-space: pre; }
-#previa { width: 100%; height: 340px; background: #fff; border: 1px solid var(--line-2); border-radius: var(--r); }
+.zona { display: grid; place-items: center; min-height: 120px; padding: 16px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line-2); border-radius: var(--r); cursor: pointer; }
+.zona:hover, .zona.sobre, .zona:focus { outline: none; border-color: var(--accent); border-style: solid; color: var(--text); }
+.zona input { display: none; }
+#fotos { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 0; padding: 0; list-style: none; }
+#fotos img { height: 48px; border-radius: 2px; border: 1px solid var(--line-2); display: block; }
+#estado { min-height: 1.4em; margin: 10px 0 14px; }
+#estado.erro { color: var(--bad); }
+textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: pre-wrap; }
+.linha { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.linha label { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.linha input { width: 140px; }
 </style>
 </head>
 <body>
 <main>
   <h1>Receber colagem</h1>
 
-  <section class="passo">
-    <h2>1. Conversa do Teams</h2>
-    <textarea id="entrada" spellcheck="false" autofocus placeholder="Copie a conversa no Teams e cole aqui (Ctrl+V)"></textarea>
-  </section>
+  <label class="zona" id="zona" tabindex="0">
+    <span>Cole o print da conversa aqui (Ctrl+V), arraste a imagem ou clique para escolher</span>
+    <input type="file" id="arquivo" accept="image/*" multiple>
+  </label>
+  <ul id="fotos"></ul>
+  <div id="estado" class="rotulo"></div>
 
-  <section class="passo">
-    <h2>2. Print da conversa (opcional)</h2>
-    <div class="zonaPrint" id="zonaPrint" contenteditable="true" spellcheck="false" data-vazio="Clique aqui e cole o print (Ctrl+V)"></div>
-    <div class="acoes">
-      <input type="file" id="arqPrint" accept="image/*" multiple>
-      <label class="opcao"><input type="checkbox" id="direitaEhEu" checked> Minhas mensagens ficam à direita</label>
-    </div>
-    <ul id="prints"></ul>
-    <div class="acoes">
-      <button id="identificar" class="primary" disabled>Identificar autores</button>
-      <span id="estadoOcr" class="rotulo estado"></span>
-    </div>
-  </section>
-
-  <section id="painel" class="passo" hidden>
-    <h2>3. Quem falou</h2>
-    <div class="nomes">
-      <label>Seu nome <input type="text" id="nomeEu" value="Aldenor" autocomplete="off"></label>
-      <label>Outra pessoa <input type="text" id="nomeOutro" value="Quintino" autocomplete="off"></label>
-    </div>
-    <div class="opcoes">
-      <label class="opcao"><input type="checkbox" id="trocaSeguintes"> Ao trocar, mudar também as seguintes sem marca</label>
-      <label class="opcao"><input type="checkbox" id="incluiResposta"> Incluir a citação das respostas</label>
-    </div>
-    <div id="msgs"></div>
-  </section>
-
-  <section class="passo">
-    <h2>Resultado <span id="origem" class="rotulo"></span></h2>
-    <textarea id="saida" spellcheck="false" readonly></textarea>
-    <div class="acoes">
-      <button id="copiar" class="primary">Copiar</button>
-      <button id="limpar">Limpar</button>
-      <span id="aviso" class="rotulo"></span>
-    </div>
-  </section>
-
-  <details>
-    <summary>Detalhes da leitura do print</summary>
-    <textarea id="diag" spellcheck="false" readonly aria-label="Detalhes da leitura do print"></textarea>
-  </details>
-
-  <details>
-    <summary>Avançado: HTML da colagem</summary>
-    <p id="tipos" class="rotulo"></p>
-    <textarea id="bruto" spellcheck="false" aria-label="HTML" placeholder="O HTML da colagem aparece aqui. Também dá para colar ou escrever um HTML e usar os botões abaixo."></textarea>
-    <div class="acoes">
-      <button id="executar">Mostrar o HTML renderizado</button>
-      <button id="lerHtml">Ler este HTML como conversa</button>
-      <label class="opcao"><input type="checkbox" id="comScripts"> Permitir scripts</label>
-    </div>
-    <iframe id="previa" sandbox title="Resultado do HTML" style="margin-top:10px"></iframe>
-  </details>
+  <textarea id="saida" spellcheck="false" readonly aria-label="Texto da conversa"></textarea>
+  <div class="linha">
+    <button id="copiar" class="primary">Copiar</button>
+    <button id="limpar">Limpar</button>
+    <label class="rotulo">Seu nome <input type="text" id="meuNome" value="Eu" autocomplete="off"></label>
+  </div>
 </main>
 
 <script>
   const $ = id => document.getElementById(id);
-  const entrada = $('entrada'), saida = $('saida'), origem = $('origem'), tipos = $('tipos'), bruto = $('bruto'), previa = $('previa');
-  const painel = $('painel'), listaMsgs = $('msgs'), nomeEu = $('nomeEu'), nomeOutro = $('nomeOutro'), aviso = $('aviso');
-  const estadoOcr = $('estadoOcr'), diagEl = $('diag');
+  const saida = $('saida'), estado = $('estado'), fotos = $('fotos'), meuNome = $('meuNome');
 
-  try {
-    nomeEu.value = localStorage.getItem('cf:colagem:eu') || nomeEu.value;
-    nomeOutro.value = localStorage.getItem('cf:colagem:outro') || nomeOutro.value;
-  } catch (e) {}
+  try { meuNome.value = localStorage.getItem('cf:colagem:eu') || meuNome.value; } catch (e) {}
 
-  const BLOCOS = new Set(['ADDRESS','ARTICLE','ASIDE','BLOCKQUOTE','BR','DD','DIV','DL','DT','FIELDSET','FIGCAPTION','FIGURE','FOOTER','FORM','H1','H2','H3','H4','H5','H6','HEADER','HR','LI','MAIN','NAV','OL','P','PRE','SECTION','TABLE','TR','UL']);
-  const IGNORAR = new Set(['SCRIPT','STYLE','TEMPLATE','HEAD','NOSCRIPT']);
-
-  // ================= HTML -> texto =================
-  function htmlParaTexto(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    let out = '';
-    (function andar(no) {
-      if (no.nodeType === 3) { out += no.nodeValue.replace(/\s+/g, ' '); return; }
-      if (no.nodeType !== 1 || IGNORAR.has(no.tagName)) return;
-      const bloco = BLOCOS.has(no.tagName);
-      if (bloco) out += '\n';
-      no.childNodes.forEach(andar);
-      if (bloco) out += '\n';
-    })(doc.body);
-    return out.split('\n').map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  }
-
-  // Teams: <span data-teams> > um <span> por mensagem > <p>/<ul>. Respostas vêm num
-  // <blockquote itemtype=".../Reply"> com o autor e a prévia da mensagem citada.
-  function textoInline(no) {
-    if (no.nodeType === 3) return no.nodeValue.replace(/\s*\n\s*/g, ' ').replace(/ /g, ' ');
-    if (no.nodeType !== 1 || IGNORAR.has(no.tagName)) return '';
-    if (no.tagName === 'BR') return '\n';
-    if (no.tagName === 'IMG') return no.getAttribute('alt') || '';
-    if (no.tagName === 'A') {
-      const href = no.getAttribute('href') || '', t = [...no.childNodes].map(textoInline).join('').trim();
-      // o Teams corta o texto do link com "…": o endereço completo está no href
-      if (!href || t === href) return href || t;
-      return /^https?:\/\//.test(t) || !t ? href : t + ' (' + href + ')';
-    }
-    return [...no.childNodes].map(textoInline).join('');
-  }
-
-  function mensagensDoTeams(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const raiz = doc.querySelector('[data-teams]');
-    if (!raiz) return null;
-    return [...raiz.children].map(msg => {
-      let resposta = null;
-      const q = msg.querySelector('blockquote');
-      if (q) {
-        const autor = q.querySelector('[itemprop="mri"]'), prev = q.querySelector('[itemprop="preview"]');
-        resposta = { autor: autor ? autor.textContent.trim() : '', previa: prev ? textoInline(prev).trim() : '' };
-      }
-      const temLink = !!msg.querySelector('a[itemtype*="HyperLink"]');
-      const linhas = [];
-      msg.querySelectorAll('p, ul, ol').forEach(el => {
-        if (el.closest('blockquote') || (el.tagName === 'P' && el.closest('li'))) return;
-        if (el.tagName === 'P') {
-          // cartão de pré-visualização de link ("Jira", "Log in with…"): ruído para quem lê
-          if (temLink && /margin:\s*0/.test(el.getAttribute('style') || '')) return;
-          linhas.push(textoInline(el).trim());
-        } else {
-          if (linhas.length && linhas[linhas.length - 1] !== '') linhas.push('');
-          el.querySelectorAll(':scope > li').forEach(li => {
-            const t = textoInline(li).replace(/[ \t]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim();
-            linhas.push('- ' + t.replace(/\n/g, '\n  '));
-          });
-        }
-      });
-      let texto = linhas.join('\n').trim();
-      if (!linhas.length) texto = textoInline(msg).trim();
-      return { texto, resposta };
-    }).filter(m => m.texto || m.resposta);
-  }
-
-  // ================= quem falou: marcas em camadas =================
-  // Cada mensagem pode ter três fontes, da mais forte para a mais fraca:
-  //   manual (você clicou)  >  ocr (print)  >  pista (resposta ou nome no começo).
-  // Sem nenhuma, segue a mensagem anterior. Editar o nome só refaz as pistas.
-  let msgs = []; // { texto, resposta, manual, ocr, pista, pistaFonte, quem }
-  const nome = quem => (quem === 'eu' ? nomeEu.value.trim() || 'Eu' : nomeOutro.value.trim() || 'Outro');
-
-  function calcularPistas() {
-    const tok = el => el.value.trim().split(/\s+/)[0].toLowerCase();
-    const eu = tok(nomeEu), outro = tok(nomeOutro);
-    const cita = (texto, n) => !!n && texto.toLowerCase().split(/[^\p{L}\p{N}]+/u).includes(n);
-    msgs.forEach(m => {
-      m.pista = null; m.pistaFonte = '';
-      if (m.resposta && m.resposta.autor && eu) { // resposta a mensagem de um lado vem do outro lado
-        m.pista = m.resposta.autor.toLowerCase().includes(eu) ? 'outro' : 'eu'; m.pistaFonte = 'pela resposta'; return;
-      }
-      const inicio = m.texto.slice(0, 60); // quem chama alguém pelo nome ("Opa Aldenor") não é essa pessoa
-      const comEu = cita(inicio, eu), comOutro = cita(inicio, outro);
-      if (comEu !== comOutro) { m.pista = comEu ? 'outro' : 'eu'; m.pistaFonte = 'pelo nome'; }
-    });
-  }
-  function resolver() {
-    let ant = 'outro';
-    msgs.forEach(m => { m.quem = m.manual || m.ocr || m.pista || ant; ant = m.quem; });
-  }
-  const fonteDe = m => m.manual ? 'marcado por você' : m.ocr ? 'pelo print' : m.pista ? m.pistaFonte : 'segue a anterior';
-
-  function trocar(i) {
-    const antes = msgs.map(m => m.quem);
-    msgs[i].manual = antes[i] === 'eu' ? 'outro' : 'eu';
-    if (!$('trocaSeguintes').checked) {
-      // só esta mensagem: as seguintes sem marca mantêm o lado que já tinham
-      for (let j = i + 1; j < msgs.length && !msgs[j].manual && !msgs[j].ocr && !msgs[j].pista; j++) msgs[j].manual = antes[j];
-    }
-    resolver(); desenhar();
-  }
-
-  function linhaDe(m) {
-    let t = nome(m.quem) + ': ';
-    if (m.resposta && $('incluiResposta').checked) t += '(em resposta a ' + (m.resposta.autor || 'outra mensagem') + (m.resposta.previa ? ': "' + m.resposta.previa + '"' : '') + ')\n';
-    return t + m.texto;
-  }
-
-  function desenhar() {
-    listaMsgs.replaceChildren(...msgs.map((m, i) => {
-      const d = document.createElement('div'); d.className = 'msg ' + m.quem;
-      const lado = document.createElement('div'); lado.className = 'lado';
-      const b = document.createElement('button'); b.className = 'quem'; b.textContent = nome(m.quem);
-      b.title = 'Trocar quem falou'; b.onclick = () => trocar(i);
-      const f = document.createElement('div'); f.className = 'fonte'; f.textContent = fonteDe(m);
-      lado.append(b, f);
-      const c = document.createElement('div'); c.className = 'corpo';
-      if (m.resposta) {
-        const r = document.createElement('div'); r.className = 'resposta';
-        r.textContent = 'Em resposta a ' + (m.resposta.autor || 'outra mensagem') + (m.resposta.previa ? ': ' + m.resposta.previa : '');
-        c.append(r);
-      }
-      c.append(document.createTextNode(m.texto));
-      d.append(lado, c); return d;
-    }));
-    saida.value = msgs.map(linhaDe).join('\n\n');
-  }
-
-  $('incluiResposta').addEventListener('change', () => { if (msgs.length) desenhar(); });
-  [nomeEu, nomeOutro].forEach((el, k) => el.addEventListener('input', () => {
-    try { localStorage.setItem(k ? 'cf:colagem:outro' : 'cf:colagem:eu', el.value); } catch (e) {}
-    if (msgs.length) { calcularPistas(); resolver(); desenhar(); } // só as pistas: manual e print ficam
-  }));
-
-  // ================= casar o print com as mensagens =================
   const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  function distancia(a, b) {
-    const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
-    let ant = Array.from({ length: n + 1 }, (_, j) => j);
-    for (let i = 1; i <= m; i++) {
-      const cur = [i];
-      for (let j = 1; j <= n; j++) cur[j] = Math.min(ant[j] + 1, cur[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-      ant = cur;
-    }
-    return ant[n];
-  }
-  const parecido = (a, b) => 1 - distancia(a, b) / Math.max(a.length, b.length, 1);
+  const mediana = a => { const b = [...a].sort((x, y) => x - y); return b.length ? b[b.length >> 1] : 0; };
 
-  // Cabeçalho de um trecho: [nome] dia-ou-data hora, ex.: "sexta-feira 11:58" ou "Mateus Quintino sexta-feira 13:07".
-  // Exigir o dia/data evita confundir "às 14:30" dentro de uma mensagem com um cabeçalho.
+  // ================= do print para as mensagens =================
+  // O Teams mostra, em cada trecho de mensagens do mesmo autor, um cabeçalho com dia e hora:
+  //   outra pessoa:  "Mateus Quintino sexta-feira 13:07"  (à esquerda, com o nome)
+  //   você:          "sexta-feira 11:58"                  (encostado na margem direita, sem nome)
+  // As linhas abaixo do cabeçalho são as mensagens daquele trecho. Uma folga maior que uma linha
+  // entre duas linhas separa uma mensagem da seguinte.
   const CABECALHO = /(?:^|\s)(?:segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo)(?:-feira)?\s+(?:[àa]s\s+)?(?:[01]?\d|2[0-3])[:.][0-5]\d|(?:^|\s)(?:hoje|ontem|today|yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+(?:[àa]s\s+|at\s+)?(?:[01]?\d|2[0-3])[:.][0-5]\d|(?:^|\s)\d{1,2}[\/.]\d{1,2}(?:[\/.]\d{2,4})?,?\s+(?:[àa]s\s+)?(?:[01]?\d|2[0-3])[:.][0-5]\d/i;
+  const SEPARADOR_DE_DIA = /^(?:segunda|terca|quarta|quinta|sexta|sabado|domingo|hoje|ontem|today|yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?: feira)?$|^\d{1,2} \d{1,2}(?: \d{2,4})?$/;
 
-  // linhas: [{ t, n, x0, x1 }] (texto, texto normalizado e margens em pixels da imagem original).
-  // Devolve as marcas ('eu'/'outro') só das mensagens que foram achadas e têm cabeçalho acima.
-  function casarPrint(textos, linhas, direitaEhEu) {
-    const maxX1 = Math.max(1, ...linhas.map(l => l.x1)); // a margem direita do próprio chat
+  // linhas: [{ t, n, x0, x1, y0, y1, conf }]  (medidas em pixels da imagem original)
+  function montarConversa(linhas, nomeEu) {
+    const L = linhas.filter(l => l.conf >= 50 && l.n.length >= 2);
+    if (!L.length) return { texto: '', runs: [] };
+    const maxX1 = Math.max(...L.map(l => l.x1)); // margem direita do próprio chat
+    const alturaTipica = mediana(L.map(l => l.y1 - l.y0).filter(h => h >= 6 && h <= 22)) || 12;
+    const folga = alturaTipica * 1.3;
+    const limpar = t => t.replace(/^[\[\(|]\S{1,5}[\]\)|]\s*/, ''); // a foto de perfil costuma sair como "[vo]"
 
-    // 1) onde cada mensagem começa no print
-    const chaves = textos.map(t => norm(t.split('\n')[0]).slice(0, 26));
-    const curtas = chaves.map(c => c.length < 8); // "Blz", "Deu sim": se repetem e dariam falso positivo
-    const buscar = (chave, de, ate) => {
-      let melhor = -1, melhorS = 0;
-      for (let j = de; j < ate; j++) {
-        for (let off = 0; off <= 6; off++) { // tolera lixo no começo da linha (a foto de perfil sai como "[vo]")
-          const s = parecido(chave, linhas[j].n.slice(off, off + chave.length));
-          if (s > melhorS) { melhorS = s; melhor = j; }
-        }
-        if (melhorS >= 0.95) break;
+    const runs = [];
+    let run = null, bloco = null, ultY = null;
+    const fechar = () => { if (bloco && bloco.partes.length) run.blocos.push(bloco.partes.join(' ')); bloco = null; };
+    L.forEach(l => {
+      const ehCab = l.t.length <= 70 && CABECALHO.test(l.t);
+      if (ehCab) {
+        fechar();
+        const m = l.t.match(CABECALHO), nome = l.t.slice(0, m.index).trim().replace(/[\s|,:;-]+$/, ''), data = l.t.slice(m.index).trim();
+        run = { lado: l.x1 >= 0.85 * maxX1 && l.x0 >= 0.4 * maxX1 ? 'dir' : 'esq', nome, data, blocos: [], xs: [] };
+        runs.push(run); ultY = null; return;
       }
-      return { melhor, melhorS };
-    };
-    const ondeComeca = {}; // índice da mensagem -> linha do print
-    // 1a) as mensagens longas são confiáveis: acham-se em ordem, de cima para baixo
-    let p = 0;
-    chaves.forEach((c, i) => {
-      if (c.length < 2 || curtas[i]) return;
-      const { melhor, melhorS } = buscar(c, p, linhas.length);
-      if (melhor >= 0 && melhorS >= 0.72) { ondeComeca[i] = melhor; p = melhor + 1; }
+      if (SEPARADOR_DE_DIA.test(l.n)) { fechar(); runs.push({ dia: l.t }); run = null; ultY = null; return; }
+      if (!run) { run = { lado: null, nome: '', data: '', blocos: [], xs: [] }; runs.push(run); } // print que começa no meio de um trecho
+      const y1 = l.y1 - l.y0 > 22 ? l.y0 + alturaTipica : l.y1; // a foto de perfil alarga a primeira linha
+      if (bloco && ultY !== null && l.y0 - ultY > folga) fechar();
+      if (!bloco) bloco = { partes: [] };
+      bloco.partes.push(limpar(l.t)); run.xs.push(l.x0); ultY = y1;
     });
-    // 1b) as curtas só valem entre a mensagem anterior já achada e a próxima longa achada
-    let ultima = -1;
-    chaves.forEach((c, i) => {
-      if (ondeComeca[i] !== undefined) { ultima = ondeComeca[i]; return; }
-      if (c.length < 2 || !curtas[i]) return;
-      let prox = linhas.length;
-      for (let k = i + 1; k < textos.length; k++) if (ondeComeca[k] !== undefined) { prox = ondeComeca[k]; break; }
-      const { melhor, melhorS } = buscar(c, ultima + 1, prox);
-      if (melhor >= 0 && melhorS >= 0.99) { ondeComeca[i] = melhor; ultima = melhor; }
-    });
-    const achadas = Object.keys(ondeComeca).map(i => ({ i: +i, linha: ondeComeca[i] }));
+    fechar();
 
-    // 2) cabeçalhos: linhas de dia+hora que não são começo de mensagem. O seu fica encostado
-    //    na margem direita do chat; o da outra pessoa (nome + hora) fica à esquerda.
-    const daMsg = new Set(achadas.map(a => a.linha));
-    const cabecalhos = [];
-    linhas.forEach((l, j) => {
-      if (daMsg.has(j) || l.t.length > 70 || !CABECALHO.test(l.t)) return;
-      cabecalhos.push({ j, direita: l.x1 >= 0.85 * maxX1 && l.x0 >= 0.4 * maxX1 });
+    // trechos sem cabeçalho (início cortado): o lado sai da margem esquerda do texto, comparada com os trechos conhecidos
+    const xmin = r => Math.min(...r.xs);
+    const esq = runs.filter(r => r.lado === 'esq' && r.xs.length).map(xmin), dir = runs.filter(r => r.lado === 'dir' && r.xs.length).map(xmin);
+    const tol = 0.04 * maxX1;
+    runs.forEach(r => {
+      if (r.dia !== undefined || r.lado !== null || !r.xs.length) return;
+      if (esq.length) r.lado = xmin(r) <= mediana(esq) + tol ? 'esq' : 'dir';
+      else if (dir.length) r.lado = xmin(r) >= Math.min(...dir) - tol ? 'dir' : 'esq';
     });
 
-    // 3) cada mensagem herda o lado do cabeçalho logo acima dela
-    const marcas = {};
-    achadas.forEach(a => {
-      const acima = cabecalhos.filter(c => c.j < a.linha).pop();
-      if (acima) marcas[a.i] = acima.direita === direitaEhEu ? 'eu' : 'outro';
+    const autor = r => r.lado === 'dir' ? (nomeEu.trim() || 'Eu') : r.lado === 'esq' ? (r.nome || 'Outro') : 'Desconhecido';
+    const partes = [];
+    runs.forEach(r => {
+      if (r.dia !== undefined) { partes.push('— ' + r.dia + ' —'); return; }
+      r.blocos.forEach((b, k) => partes.push(autor(r) + (k === 0 && r.data ? ' (' + r.data + ')' : '') + ': ' + b));
     });
-    return { achadas, cabecalhos, marcas, maxX1 };
+    return { texto: partes.join('\n\n'), runs };
   }
 
-  // ================= OCR (Tesseract.js, roda no navegador) =================
+  // ================= leitura da imagem (Tesseract.js, no navegador) =================
   const TESSERACT = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
-  let carregandoOcr = null;
-  const carregarOcr = () => window.Tesseract ? Promise.resolve() : (carregandoOcr = carregandoOcr || new Promise((ok, falha) => {
+  let carregando = null;
+  const carregarOcr = () => window.Tesseract ? Promise.resolve() : (carregando = carregando || new Promise((ok, falha) => {
     const s = document.createElement('script'); s.src = TESSERACT; s.onload = ok;
-    s.onerror = () => { carregandoOcr = null; falha(new Error('não consegui baixar o leitor de texto (precisa de internet na primeira vez)')); };
+    s.onerror = () => { carregando = null; falha(new Error('não consegui baixar o leitor de texto (precisa de internet na primeira vez)')); };
     document.head.append(s);
   }));
 
@@ -350,162 +123,88 @@ details textarea { height: 160px; margin: 8px 0; font-size: 12px; white-space: p
     g.imageSmoothingQuality = 'high'; g.drawImage(bmp, 0, 0, c.width, c.height);
     const img = g.getImageData(0, 0, c.width, c.height), d = img.data; let soma = 0;
     for (let i = 0; i < d.length; i += 4) { const y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = y; soma += y; }
-    // tema escuro (texto claro no fundo escuro): inverte, que é como o leitor funciona melhor
-    if (soma / (d.length / 4) < 128) for (let i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = 255 - d[i];
+    if (soma / (d.length / 4) < 128) for (let i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = 255 - d[i]; // tema escuro: inverte
     g.putImageData(img, 0, 0);
     return { canvas: c, k };
   }
 
-  async function lerImagem(pr) {
+  async function lerLinhas(arquivo, rotulo) {
     await carregarOcr();
-    const { canvas, k } = await prepararImagem(pr.arquivo);
+    const { canvas, k } = await prepararImagem(arquivo);
     const r = await Tesseract.recognize(canvas, 'por', {
-      logger: m => { if (m.status === 'recognizing text') { pr.situacao = 'lendo… ' + Math.round(m.progress * 100) + '%'; desenharPrints(); } },
+      logger: m => { if (m.status === 'recognizing text') mostrar(rotulo + ' ' + Math.round(m.progress * 100) + '%'); },
     });
-    const d = r.data;
-    const brutas = d.lines || (d.blocks || []).flatMap(b => b.paragraphs.flatMap(p => p.lines));
-    pr.linhas = brutas.map(l => ({ t: l.text.trim(), n: norm(l.text), x0: l.bbox.x0 / k, x1: l.bbox.x1 / k })).filter(l => l.n.length >= 2);
+    const d = r.data, brutas = d.lines || (d.blocks || []).flatMap(b => b.paragraphs.flatMap(p => p.lines));
+    return brutas.map(l => ({ t: l.text.trim(), n: norm(l.text), conf: l.confidence, x0: l.bbox.x0 / k, x1: l.bbox.x1 / k, y0: l.bbox.y0 / k, y1: l.bbox.y1 / k }));
   }
 
-  // ================= lista de prints e botão =================
-  let prints = []; // { id, arquivo, url, linhas, situacao, cls }
-  let seq = 0;
-  const atualizarBotao = () => { $('identificar').disabled = !(msgs.length && prints.length); };
-
-  function desenharPrints() {
-    $('prints').replaceChildren(...prints.map(pr => {
-      const li = document.createElement('li');
-      const im = document.createElement('img'); im.src = pr.url; im.alt = '';
-      const meio = document.createElement('div');
-      const nm = document.createElement('div'); nm.className = 'nomeArq'; nm.textContent = pr.arquivo.name || 'print colado';
-      const sit = document.createElement('div'); sit.className = 'situacao ' + (pr.cls || ''); sit.textContent = pr.situacao;
-      meio.append(nm, sit);
-      const x = document.createElement('button'); x.textContent = 'Remover'; x.onclick = () => removerPrint(pr.id);
-      li.append(im, meio, x); return li;
-    }));
-    atualizarBotao();
-  }
-
-  function adicionarPrints(arquivos) {
-    const imgs = [...arquivos].filter(f => f.type.startsWith('image/'));
-    if (!imgs.length) { estadoOcr.textContent = 'Isso não é uma imagem.'; return; }
-    imgs.forEach(a => prints.push({ id: ++seq, arquivo: a, url: URL.createObjectURL(a), linhas: null, situacao: 'na fila', cls: '' }));
-    desenharPrints();
-    if (msgs.length) identificar();
-    else estadoOcr.textContent = imgs.length + (imgs.length === 1 ? ' print adicionado' : ' prints adicionados') + '. Falta colar a conversa do Teams (passo 1); depois eu identifico.';
-  }
-
-  function removerPrint(id) {
-    const i = prints.findIndex(p => p.id === id); if (i < 0) return;
-    URL.revokeObjectURL(prints[i].url); prints.splice(i, 1);
-    desenharPrints();
-    if (msgs.length) { if (prints.length) identificar(); else { msgs.forEach(m => { m.ocr = null; }); resolver(); desenhar(); estadoOcr.textContent = ''; } }
-  }
-
+  // ================= tela =================
+  let imagens = [];   // arquivos na ordem em que chegaram
+  let linhasDe = new Map(); // arquivo -> linhas lidas (para não ler de novo ao mudar o nome)
   let ocupado = false;
-  async function identificar() {
-    if (ocupado) return;
-    if (!msgs.length) { estadoOcr.textContent = 'Cole primeiro a conversa do Teams (passo 1).'; return; }
-    if (!prints.length) { estadoOcr.textContent = 'Adicione um print (passo 2).'; return; }
-    ocupado = true; $('identificar').disabled = true;
-    const relatorio = [];
-    try {
-      msgs.forEach(m => { m.ocr = null; });
-      for (const pr of prints) {
-        if (!pr.linhas) { estadoOcr.textContent = 'Lendo o print (na primeira vez baixa o leitor de texto)…'; pr.situacao = 'carregando…'; pr.cls = ''; desenharPrints(); await lerImagem(pr); }
-        const r = casarPrint(msgs.map(m => m.texto), pr.linhas, $('direitaEhEu').checked);
-        Object.entries(r.marcas).forEach(([i, q]) => { msgs[i].ocr = q; });
-        const n = Object.keys(r.marcas).length;
-        pr.situacao = n ? 'lido: ' + n + ' mensagens marcadas, ' + r.cabecalhos.length + ' cabeçalhos' : 'lido, mas nenhuma mensagem marcada (' + r.achadas.length + ' achadas, ' + r.cabecalhos.length + ' cabeçalhos)';
-        pr.cls = n ? 'ok' : 'erro';
-        relatorio.push('=== ' + (pr.arquivo.name || 'print') + ' ===\nmargem direita do chat: ' + Math.round(r.maxX1) + ' px\n' +
-          'mensagens achadas: ' + r.achadas.map(a => '#' + (a.i + 1) + '→linha ' + a.linha).join(', ') + '\n' +
-          'cabeçalhos: ' + r.cabecalhos.map(c => 'linha ' + c.j + (c.direita ? ' (direita)' : ' (esquerda)')).join(', ') + '\n' +
-          'linhas lidas:\n' + pr.linhas.map((l, j) => String(j).padStart(3) + '  x ' + String(Math.round(l.x0)).padStart(4) + '–' + String(Math.round(l.x1)).padStart(4) + '  ' + l.t).join('\n'));
-        desenharPrints();
-      }
-      resolver(); desenhar();
-      const marcadas = msgs.filter(m => m.ocr).length;
-      estadoOcr.textContent = 'Pronto: ' + marcadas + ' de ' + msgs.length + ' mensagens marcadas pelo print. As outras seguem a dedução (veja "pelo print" em cada uma).';
-    } catch (e) {
-      estadoOcr.textContent = 'Erro ao ler o print: ' + e.message;
-      prints.forEach(pr => { if (!pr.linhas) { pr.situacao = 'erro'; pr.cls = 'erro'; } }); desenharPrints();
-    } finally {
-      diagEl.value = relatorio.join('\n\n'); ocupado = false; atualizarBotao();
-    }
-  }
-  $('identificar').onclick = identificar;
-  $('arqPrint').addEventListener('change', e => { adicionarPrints(e.target.files); e.target.value = ''; });
+  const mostrar = (t, erro) => { estado.textContent = t; estado.className = 'rotulo' + (erro ? ' erro' : ''); };
 
-  // zona de colar o print (área editável para o navegador sempre entregar o evento)
-  const zona = $('zonaPrint');
-  function arquivosDe(cd) {
+  function montarTudo() {
+    const partes = imagens.map(a => linhasDe.get(a)).filter(Boolean).map(l => montarConversa(l, meuNome.value).texto).filter(Boolean);
+    saida.value = partes.join('\n\n');
+  }
+
+  function desenharFotos() {
+    fotos.replaceChildren(...imagens.map(a => { const li = document.createElement('li'), im = document.createElement('img'); im.src = a._url || (a._url = URL.createObjectURL(a)); im.alt = ''; li.append(im); return li; }));
+  }
+
+  async function processar() {
+    if (ocupado) return;
+    ocupado = true;
+    try {
+      for (let i = 0; i < imagens.length; i++) {
+        const a = imagens[i];
+        if (linhasDe.has(a)) continue;
+        const rotulo = 'Lendo o print ' + (i + 1) + '/' + imagens.length + (window.Tesseract ? '…' : ' (na primeira vez baixa o leitor de texto)…');
+        mostrar(rotulo);
+        linhasDe.set(a, await lerLinhas(a, rotulo));
+        montarTudo();
+      }
+      const n = saida.value ? saida.value.split('\n\n').filter(p => !p.startsWith('— ')).length : 0;
+      mostrar(n ? 'Pronto: ' + n + ' mensagens. Confira os nomes e o texto antes de usar; o leitor pode errar uma letra aqui e ali.' : 'Não achei mensagens nesse print. Ele precisa mostrar a conversa com os cabeçalhos (nome e hora).', !n);
+    } catch (e) { mostrar('Erro ao ler o print: ' + e.message, true); }
+    finally { ocupado = false; }
+  }
+
+  function adicionar(arquivos) {
+    const novas = [...arquivos].filter(f => f.type.startsWith('image/'));
+    if (!novas.length) { mostrar('Isso não é uma imagem. Copie o print e cole de novo, ou escolha o arquivo.', true); return; }
+    imagens.push(...novas); desenharFotos(); processar();
+  }
+
+  const arquivosDe = cd => {
     const f = [...(cd.files || [])];
     if (!f.length && cd.items) [...cd.items].forEach(it => { if (it.kind === 'file') { const a = it.getAsFile(); if (a) f.push(a); } });
     return f.filter(a => a.type.startsWith('image/'));
-  }
-  zona.addEventListener('paste', e => { e.preventDefault(); const cd = e.clipboardData; if (!cd) return; const imgs = arquivosDe(cd); if (imgs.length) adicionarPrints(imgs); else estadoOcr.textContent = 'Não veio imagem nessa colagem. Copie o print e tente de novo, ou escolha o arquivo.'; });
-  zona.addEventListener('beforeinput', e => e.preventDefault());
-  zona.addEventListener('drop', e => { e.preventDefault(); adicionarPrints(e.dataTransfer.files); });
-
-  // ================= colar a conversa =================
-  let daColagem = false;
-  entrada.addEventListener('paste', e => {
+  };
+  // colar em qualquer lugar da página
+  document.addEventListener('paste', e => {
+    if (e.target === meuNome) return;
     const cd = e.clipboardData; if (!cd) return;
-    const html = cd.getData('text/html'), plano = cd.getData('text/plain');
     const imgs = arquivosDe(cd);
-    // imagem sem conversa do Teams junto: é um print, vai para o passo 2
-    if (imgs.length && !/data-teams/.test(html)) { e.preventDefault(); adicionarPrints(imgs); return; }
-    tipos.textContent = 'Formatos: ' + ([...cd.types].join(', ') || 'nenhum');
-    bruto.value = html;
-    daColagem = true;
-    carregarConversa(html, plano);
-    executar();
+    if (imgs.length) { e.preventDefault(); adicionar(imgs); }
+    else mostrar('Não veio imagem nessa colagem. Tire um print da conversa, copie a imagem e cole aqui.', true);
   });
-  entrada.addEventListener('input', e => { // digitação normal: o resultado espelha o campo
-    if (e.inputType === 'insertFromPaste' && daColagem) { daColagem = false; return; }
-    msgs = []; painel.hidden = true; saida.value = entrada.value; origem.textContent = ''; atualizarBotao();
-  });
+  $('arquivo').addEventListener('change', e => { adicionar(e.target.files); e.target.value = ''; });
+  const zona = $('zona');
+  ['dragenter', 'dragover'].forEach(n => zona.addEventListener(n, e => { e.preventDefault(); zona.classList.add('sobre'); }));
+  zona.addEventListener('dragleave', () => zona.classList.remove('sobre'));
+  zona.addEventListener('drop', e => { e.preventDefault(); zona.classList.remove('sobre'); adicionar(e.dataTransfer.files); });
 
-  function carregarConversa(html, plano) {
-    try {
-      const lidas = html ? mensagensDoTeams(html) : null;
-      if (lidas) {
-        msgs = lidas.map(m => ({ ...m, manual: null, ocr: null, pista: null, pistaFonte: '', quem: 'outro' }));
-        calcularPistas(); resolver();
-        painel.hidden = false;
-        origem.textContent = '(Teams: ' + msgs.length + (msgs.length === 1 ? ' mensagem' : ' mensagens') + ')';
-        desenhar();
-        if (prints.length) identificar(); // já tinha print esperando
-      } else {
-        msgs = []; painel.hidden = true;
-        if (html) { saida.value = htmlParaTexto(html); origem.textContent = '(lido do HTML)'; }
-        else { saida.value = plano || ''; origem.textContent = plano ? '(texto simples)' : ''; }
-      }
-    } catch (err) { origem.textContent = '(erro ao ler a colagem: ' + err.message + ')'; }
-    atualizarBotao();
-  }
-
-  // ================= avançado: executor de HTML =================
-  // Sem "Permitir scripts" nada executa; com a caixa marcada os scripts rodam, mas isolados
-  // (origem separada): sem acesso à página, aos seus dados salvos nem a outras ferramentas.
-  function executar() {
-    previa.setAttribute('sandbox', $('comScripts').checked ? 'allow-scripts' : '');
-    previa.srcdoc = bruto.value;
-  }
-  $('executar').onclick = executar;
-  $('comScripts').addEventListener('change', executar);
-  $('lerHtml').onclick = () => carregarConversa(bruto.value, '');
-
+  meuNome.addEventListener('input', () => { try { localStorage.setItem('cf:colagem:eu', meuNome.value); } catch (e) {} montarTudo(); });
   $('copiar').onclick = async () => {
-    try { await navigator.clipboard.writeText(saida.value); aviso.textContent = 'Copiado'; }
-    catch (e) { saida.select(); aviso.textContent = 'Selecionado; use Ctrl+C'; }
-    setTimeout(() => { aviso.textContent = ''; }, 1500);
+    if (!saida.value) return;
+    try { await navigator.clipboard.writeText(saida.value); mostrar('Copiado.'); }
+    catch (e) { saida.select(); mostrar('Selecionado; use Ctrl+C.'); }
   };
   $('limpar').onclick = () => {
-    prints.forEach(p => URL.revokeObjectURL(p.url)); prints = [];
-    entrada.value = ''; saida.value = ''; bruto.value = ''; tipos.textContent = ''; origem.textContent = ''; previa.srcdoc = '';
-    diagEl.value = ''; estadoOcr.textContent = ''; msgs = []; painel.hidden = true; desenharPrints(); entrada.focus();
+    imagens.forEach(a => a._url && URL.revokeObjectURL(a._url)); imagens = []; linhasDe = new Map();
+    fotos.replaceChildren(); saida.value = ''; mostrar('');
   };
 </script>
 </body>
