@@ -28,6 +28,10 @@ textarea { width: 100%; height: 150px; font: 14px/1.5 var(--mono); white-space: 
 .opcoes label { display: flex; align-items: center; gap: 6px; }
 @media (max-width: 560px) { .msg { grid-template-columns: 1fr; } }
 
+.print { margin: 4px 0 14px; }
+.print > label { display: block; margin-bottom: 8px; }
+#estadoOcr { margin: 8px 0 0; min-height: 1.2em; }
+.print input[type=file] { font-size: 13px; color: var(--muted); }
 details { margin-top: 22px; }
 summary { cursor: pointer; color: var(--muted); font-size: 13px; }
 details textarea { height: 160px; margin: 8px 0; font-size: 12px; white-space: pre; }
@@ -54,6 +58,14 @@ details .acoes { margin-bottom: 12px; }
     <div class="opcoes">
       <label><input type="checkbox" id="trocaSeguintes"> Trocar também as seguintes sem marca</label>
       <label><input type="checkbox" id="incluiResposta"> Incluir a citação das respostas</label>
+    </div>
+    <div class="print">
+      <label for="arqPrint">Print da conversa (opcional): cole a imagem aqui com Ctrl+V ou escolha o arquivo. Lê quem falou pela posição dos balões.</label>
+      <div class="acoes">
+        <input type="file" id="arqPrint" accept="image/*" multiple>
+        <label class="opcao"><input type="checkbox" id="direitaEhEu" checked> Minhas mensagens ficam à direita</label>
+      </div>
+      <p id="estadoOcr" class="rotulo"></p>
     </div>
     <div id="msgs"></div>
   </section>
@@ -220,10 +232,114 @@ details .acoes { margin-bottom: 12px; }
     if (msgs.length) { atribuir(); desenhar(); }
   }));
 
+  // ---------- print da conversa (OCR no navegador) ----------
+  // O leitor de texto (Tesseract.js) roda aqui mesmo: a imagem não sai do seu computador.
+  // Ele devolve cada linha com a posição na imagem. No Teams as suas mensagens ficam à direita
+  // e as da outra pessoa à esquerda; juntando isso ao texto exato do HTML descobrimos o autor.
+  const TESSERACT = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+  let carregandoOcr = null;
+  const carregarOcr = () => window.Tesseract ? Promise.resolve() : (carregandoOcr = carregandoOcr || new Promise((ok, falha) => {
+    const s = document.createElement('script'); s.src = TESSERACT; s.onload = ok;
+    s.onerror = () => { carregandoOcr = null; falha(new Error('não consegui baixar o leitor de texto (precisa de internet na primeira vez)')); };
+    document.head.append(s);
+  }));
+
+  async function prepararImagem(arquivo) {
+    const bmp = await createImageBitmap(arquivo);
+    const k = bmp.width < 1400 ? 2 : 1; // imagens pequenas ficam mais legíveis ampliadas
+    const c = document.createElement('canvas'); c.width = bmp.width * k; c.height = bmp.height * k;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.imageSmoothingQuality = 'high'; g.drawImage(bmp, 0, 0, c.width, c.height);
+    const img = g.getImageData(0, 0, c.width, c.height), d = img.data; let soma = 0;
+    for (let i = 0; i < d.length; i += 4) { const y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = y; soma += y; }
+    // tema escuro (texto claro no fundo escuro): inverte, que é como o leitor funciona melhor
+    if (soma / (d.length / 4) < 128) for (let i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = 255 - d[i];
+    g.putImageData(img, 0, 0);
+    return { canvas: c, k, largura: bmp.width };
+  }
+
+  const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  function distancia(a, b) {
+    const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+    let ant = Array.from({ length: n + 1 }, (_, j) => j);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) cur[j] = Math.min(ant[j] + 1, cur[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      ant = cur;
+    }
+    return ant[n];
+  }
+  const parecido = (a, b) => 1 - distancia(a, b) / Math.max(a.length, b.length, 1);
+
+  // Cada trecho de mensagens do mesmo autor tem um cabeçalho com a hora. No Teams o seu cabeçalho
+  // fica encostado à direita (só a hora) e o da outra pessoa à esquerda (nome e hora). Cada
+  // mensagem pertence ao cabeçalho que vem logo acima dela.
+  const temHora = /(^|[^0-9])([01]?[0-9]|2[0-3]):[0-5][0-9]/;
+
+  async function lerPrint(arquivo, ordem, total) {
+    const estado = $('estadoOcr');
+    if (!msgs.length) { estado.textContent = 'Cole primeiro a conversa do Teams; depois o print.'; return; }
+    try {
+      estado.textContent = 'Carregando o leitor de texto…';
+      await carregarOcr();
+      const { canvas, k, largura } = await prepararImagem(arquivo);
+      const r = await Tesseract.recognize(canvas, 'por', {
+        logger: m => { if (m.status === 'recognizing text') estado.textContent = 'Lendo o print ' + ordem + '/' + total + '… ' + Math.round(m.progress * 100) + '%'; else if (m.status) estado.textContent = 'Preparando (' + m.status + ')…'; },
+      });
+      const data = r.data;
+      const linhas = (data.lines || (data.blocks || []).flatMap(b => b.paragraphs.flatMap(p => p.lines)))
+        .map(l => ({ t: l.text.trim(), n: norm(l.text), x0: l.bbox.x0 / k }))
+        .filter(l => l.n.length >= 2);
+
+      // 1) acha, para cada mensagem do HTML, a linha do print onde ela começa
+      let p = 0;
+      const achadas = [];
+      msgs.forEach((m, i) => {
+        const chave = norm(m.texto.split('\n')[0]).slice(0, 26);
+        if (chave.length < 2) return;
+        let melhor = -1, melhorS = 0;
+        for (let j = p; j < linhas.length; j++) {
+          // tolera lixo no começo da linha (a foto de perfil costuma sair como "[vo]")
+          for (let off = 0; off <= 6; off++) {
+            const s = parecido(chave, linhas[j].n.slice(off, off + chave.length));
+            if (s > melhorS) { melhorS = s; melhor = j; }
+          }
+          if (melhorS >= 0.95) break;
+        }
+        if (melhor >= 0 && melhorS >= (chave.length < 8 ? 0.99 : 0.72)) { achadas.push({ i, linha: melhor }); p = melhor + 1; }
+      });
+      if (!achadas.length) { estado.textContent = 'Print ' + ordem + ': não achei nenhuma mensagem da colagem no print.'; return; }
+
+      // 2) cabeçalhos: linhas curtas com hora que não são o começo de uma mensagem
+      const daMensagem = new Set(achadas.map(a => a.linha));
+      const cabecalhos = [];
+      linhas.forEach((l, j) => { if (!daMensagem.has(j) && l.t.length <= 60 && temHora.test(l.t)) cabecalhos.push({ j, direita: l.x0 > largura * 0.5 }); });
+      if (!cabecalhos.length) { estado.textContent = 'Print ' + ordem + ': não achei os cabeçalhos com a hora (nome e horário) para saber de quem é cada mensagem.'; return; }
+
+      // 3) cada mensagem herda o lado do cabeçalho logo acima dela
+      const direitaEhEu = $('direitaEhEu').checked;
+      let marcadas = 0;
+      achadas.forEach(a => {
+        const acima = cabecalhos.filter(c => c.j < a.linha).pop();
+        if (!acima) return; // o print começa no meio do trecho: sem cabeçalho acima, fica como estava
+        msgs[a.i].quem = acima.direita === direitaEhEu ? 'eu' : 'outro'; msgs[a.i].manual = true; marcadas++;
+      });
+      desenhar();
+      estado.textContent = 'Print ' + ordem + '/' + total + ': marquei ' + marcadas + ' de ' + msgs.length + ' mensagens pelos cabeçalhos (' + cabecalhos.length + ' cabeçalhos, ' + linhas.length + ' linhas lidas). As que não aparecem no print ficam como estavam.';
+    } catch (e) { estado.textContent = 'Erro ao ler o print: ' + e.message; }
+  }
+  async function lerPrints(arquivos) {
+    const imgs = [...arquivos].filter(f => f.type.startsWith('image/'));
+    for (let i = 0; i < imgs.length; i++) await lerPrint(imgs[i], i + 1, imgs.length);
+  }
+  $('arqPrint').addEventListener('change', e => { lerPrints(e.target.files); e.target.value = ''; });
+
   // ---------- colagem ----------
   let daColagem = false;
   entrada.addEventListener('paste', e => {
     const cd = e.clipboardData; if (!cd) return;
+    // imagem colada (print): vai para o leitor, não para o campo
+    if (cd.files && cd.files.length && [...cd.files].some(f => f.type.startsWith('image/'))) { e.preventDefault(); lerPrints(cd.files); return; }
     const html = cd.getData('text/html'), plano = cd.getData('text/plain');
     tipos.textContent = 'Formatos: ' + ([...cd.types].join(', ') || 'nenhum');
     bruto.value = html;

@@ -21,9 +21,21 @@
   .lista a:hover { color: var(--text); background: var(--raised); }
   .lista a[aria-current="page"] { color: var(--text); background: var(--raised); border-left-color: var(--accent); }
   .lista a[aria-current="page"] svg { color: var(--accent); }
-  .rodape { padding: 12px 18px; border-top: 1px solid var(--line); font-size: 12px; }
+  .rodape { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--line); font-size: 12px; }
   .rodape a { color: var(--muted); text-decoration: none; }
   .rodape a:hover { color: var(--text); }
+  #btnChave { background: transparent; border: 0; padding: 0; color: var(--muted); font-size: 12px; gap: 8px; }
+  #btnChave:hover { color: var(--text); }
+  #btnChave svg { width: 16px; height: 16px; }
+  .ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line-2); border-radius: var(--r); padding: 20px; width: min(420px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0, 0, 0, .6); }
+  dialog h2 { margin-bottom: 8px; }
+  dialog label { display: block; margin: 12px 0 6px; }
+  dialog input { width: 100%; font-family: var(--mono); }
+  .aviso-chave { font-size: 13px; color: var(--muted); margin: 0; }
+  .linha-botoes { display: flex; gap: 8px; margin-top: 14px; }
+  .linha-botoes .danger { margin-left: auto; }
 
   #quadros { height: 100%; min-height: 0; min-width: 0; }
   iframe { width: 100%; height: 100%; border: 0; background: var(--bg); display: block; }
@@ -32,7 +44,8 @@
   @media (max-width: 720px) {
     .casca { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
     nav { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); }
-    .marca, .rodape { display: none; }
+    .marca, .rodape a, #btnChave .rot { display: none; }
+    .rodape { flex-direction: row; border-top: 0; border-left: 1px solid var(--line); padding: 0 14px; align-items: center; }
     .lista { display: flex; overflow-x: auto; overflow-y: hidden; padding: 0; scrollbar-width: none; }
     .lista::-webkit-scrollbar { display: none; }
     .lista li { flex: none; }
@@ -46,13 +59,32 @@
   <nav aria-label="Ferramentas">
     <div class="marca">Central</div>
     <ul class="lista" id="lista"></ul>
-    <div class="rodape"><a href="https://github.com/AldenorNeto/central-de-ferramentas" target="_blank" rel="noopener">Código</a></div>
+    <div class="rodape">
+      <button id="btnChave" type="button" title="Chave da OpenAI"><span id="icChave"></span><span class="rot">Chave da OpenAI</span><span class="ponto" id="pontoChave" hidden></span></button>
+      <a href="https://github.com/AldenorNeto/central-de-ferramentas" target="_blank" rel="noopener">Código</a>
+    </div>
   </nav>
   <div id="quadros"></div>
 </div>
 
+<dialog id="dlgChave">
+  <form method="dialog" id="formChave" autocomplete="off">
+    <h2>Chave da OpenAI</h2>
+    <p class="aviso-chave">Fica salva só neste navegador, em texto simples, e é usada só para falar com a OpenAI. Use uma chave com limite de gasto.</p>
+    <label for="campoChave">Chave</label>
+    <input type="password" id="campoChave" placeholder="sk-…" spellcheck="false" autocomplete="off">
+    <p id="estadoChave" class="rotulo"></p>
+    <div class="linha-botoes">
+      <button type="submit" class="primary" id="salvarChave" value="salvar">Salvar</button>
+      <button type="button" id="apagarChave" class="danger">Remover</button>
+      <button type="button" id="fecharChave">Fechar</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="ferramentas.js"></script>
 <script src="icones.js"></script>
+<script src="chave.js"></script>
 <script>
   const lista = document.getElementById('lista'), quadros = document.getElementById('quadros');
   const guardar = { ler() { try { return localStorage.getItem('cf:ultima'); } catch (e) { return null; } },
@@ -88,6 +120,25 @@
   }
   window.addEventListener('hashchange', abrir);
   abrir();
+
+  // ---------- chave da OpenAI ----------
+  const dlg = document.getElementById('dlgChave'), campo = document.getElementById('campoChave');
+  const estado = document.getElementById('estadoChave'), ponto = document.getElementById('pontoChave');
+  document.getElementById('icChave').innerHTML = icone('chave');
+  function mostrarEstado() {
+    const tem = CHAVE_OPENAI.existe();
+    ponto.hidden = !tem;
+    estado.textContent = tem ? 'Chave salva: ' + CHAVE_OPENAI.mascarada() : 'Nenhuma chave salva.';
+  }
+  document.getElementById('btnChave').onclick = () => { campo.value = ''; mostrarEstado(); dlg.showModal(); campo.focus(); };
+  document.getElementById('fecharChave').onclick = () => dlg.close();
+  document.getElementById('apagarChave').onclick = () => { CHAVE_OPENAI.apagar(); campo.value = ''; mostrarEstado(); };
+  document.getElementById('formChave').addEventListener('submit', () => {
+    const v = campo.value.trim();
+    if (v) { if (!CHAVE_OPENAI.gravar(v)) alert('Não consegui salvar: o navegador bloqueou o armazenamento.'); }
+    campo.value = ''; mostrarEstado();
+  });
+  mostrarEstado();
 </script>
 </body>
 </html>
