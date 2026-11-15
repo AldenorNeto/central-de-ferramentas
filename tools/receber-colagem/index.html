@@ -17,7 +17,8 @@
 #estado.erro { color: var(--bad); }
 textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: pre-wrap; }
 .linha { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-.linha label { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.linha label { display: flex; align-items: center; gap: 8px; }
+.linha label:first-of-type { margin-left: auto; }
 .linha input { width: 140px; }
 </style>
 </head>
@@ -37,14 +38,15 @@ textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: 
     <button id="copiar" class="primary">Copiar</button>
     <button id="limpar">Limpar</button>
     <label class="rotulo">Seu nome <input type="text" id="meuNome" value="Eu" autocomplete="off"></label>
+    <label class="rotulo">Outra pessoa <input type="text" id="outroNome" value="Outro" autocomplete="off"></label>
   </div>
 </main>
 
 <script>
   const $ = id => document.getElementById(id);
-  const saida = $('saida'), estado = $('estado'), fotos = $('fotos'), meuNome = $('meuNome');
+  const saida = $('saida'), estado = $('estado'), fotos = $('fotos'), meuNome = $('meuNome'), outroNome = $('outroNome');
 
-  try { meuNome.value = localStorage.getItem('cf:colagem:eu') || meuNome.value; } catch (e) {}
+  try { meuNome.value = localStorage.getItem('cf:colagem:eu') || meuNome.value; outroNome.value = localStorage.getItem('cf:colagem2:outro') || outroNome.value; } catch (e) {}
 
   const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const mediana = a => { const b = [...a].sort((x, y) => x - y); return b.length ? b[b.length >> 1] : 0; };
@@ -59,51 +61,66 @@ textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: 
   const SEPARADOR_DE_DIA = /^(?:segunda|terca|quarta|quinta|sexta|sabado|domingo|hoje|ontem|today|yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?: feira)?$|^\d{1,2} \d{1,2}(?: \d{2,4})?$/;
 
   // linhas: [{ t, n, x0, x1, y0, y1, conf }]  (medidas em pixels da imagem original)
-  function montarConversa(linhas, nomeEu) {
-    const L = linhas.filter(l => l.conf >= 50 && l.n.length >= 2);
-    if (!L.length) return { texto: '', runs: [] };
+  // Com cabeçalho (Teams) o autor vem dele. Sem cabeçalho (ChatGPT, WhatsApp...) o lado vem da
+  // posição: texto encostado à direita é seu, texto na margem esquerda é da outra pessoa.
+  function montarConversa(linhas, nomeEu, nomeOutro) {
+    const L = linhas.filter(l => l.conf >= 65 && l.n.length >= 2); // abaixo disso quase sempre é ruído (ícones, bordas, linha cortada)
+    if (!L.length) return { texto: '', msgs: [] };
     const maxX1 = Math.max(...L.map(l => l.x1)); // margem direita do próprio chat
     const alturaTipica = mediana(L.map(l => l.y1 - l.y0).filter(h => h >= 6 && h <= 22)) || 12;
     const folga = alturaTipica * 1.3;
-    const limpar = t => t.replace(/^[\[\(|]\S{1,5}[\]\)|]\s*/, ''); // a foto de perfil costuma sair como "[vo]"
+    // tira a foto de perfil lida como "[vo]" e símbolos soltos nas pontas da linha (emojis viram "&", "|!", ")")
+    const limpar = t => {
+      const u = t.replace(/^[\[\(|]\S{1,5}[\]\)|]\s*/, '').split(/\s+/);
+      const util = x => /[\p{L}\p{N}]/u.test(x) && !/^[LI|!]{2,4}$/.test(x); // "LL", "II", "|!": borda do balão lida como letras
+      let a = 0, b = u.length;
+      while (a < b && !util(u[a])) a++;
+      while (b > a && !util(u[b - 1])) b--;
+      return u.slice(a, b).join(' ') || t;
+    };
 
     const runs = [];
     let run = null, bloco = null, ultY = null;
-    const fechar = () => { if (bloco && bloco.partes.length) run.blocos.push(bloco.partes.join(' ')); bloco = null; };
+    const fechar = () => { if (bloco && bloco.partes.length) run.blocos.push({ texto: bloco.partes.join(' '), x: Math.min(...bloco.xs) }); bloco = null; };
     L.forEach(l => {
-      const ehCab = l.t.length <= 70 && CABECALHO.test(l.t);
-      if (ehCab) {
+      if (l.t.length <= 70 && CABECALHO.test(l.t)) {
         fechar();
         const m = l.t.match(CABECALHO), nome = l.t.slice(0, m.index).trim().replace(/[\s|,:;-]+$/, ''), data = l.t.slice(m.index).trim();
-        run = { lado: l.x1 >= 0.85 * maxX1 && l.x0 >= 0.4 * maxX1 ? 'dir' : 'esq', nome, data, blocos: [], xs: [] };
+        run = { lado: l.x1 >= 0.85 * maxX1 && l.x0 >= 0.4 * maxX1 ? 'dir' : 'esq', nome, data, blocos: [] };
         runs.push(run); ultY = null; return;
       }
       if (SEPARADOR_DE_DIA.test(l.n)) { fechar(); runs.push({ dia: l.t }); run = null; ultY = null; return; }
-      if (!run) { run = { lado: null, nome: '', data: '', blocos: [], xs: [] }; runs.push(run); } // print que começa no meio de um trecho
+      if (!run) { run = { lado: null, nome: '', data: '', blocos: [] }; runs.push(run); } // sem cabeçalho acima
       const y1 = l.y1 - l.y0 > 22 ? l.y0 + alturaTipica : l.y1; // a foto de perfil alarga a primeira linha
       if (bloco && ultY !== null && l.y0 - ultY > folga) fechar();
-      if (!bloco) bloco = { partes: [] };
-      bloco.partes.push(limpar(l.t)); run.xs.push(l.x0); ultY = y1;
+      if (!bloco) bloco = { partes: [], xs: [] };
+      bloco.partes.push(limpar(l.t)); bloco.xs.push(l.x0); ultY = y1;
     });
     fechar();
 
-    // trechos sem cabeçalho (início cortado): o lado sai da margem esquerda do texto, comparada com os trechos conhecidos
-    const xmin = r => Math.min(...r.xs);
-    const esq = runs.filter(r => r.lado === 'esq' && r.xs.length).map(xmin), dir = runs.filter(r => r.lado === 'dir' && r.xs.length).map(xmin);
-    const tol = 0.04 * maxX1;
+    // lado de um trecho sem cabeçalho: compara a margem do texto com a dos trechos que têm cabeçalho
+    const xsDe = lado => runs.filter(r => r.lado === lado).flatMap(r => r.blocos.map(b => b.x));
+    const esq = xsDe('esq'), dir = xsDe('dir'), tol = 0.04 * maxX1;
+    const ladoDoBloco = b => {
+      if (esq.length) return b.x <= mediana(esq) + tol ? 'esq' : 'dir';
+      if (dir.length) return b.x >= Math.min(...dir) - tol ? 'dir' : 'esq';
+      return b.x > 0.3 * maxX1 ? 'dir' : 'esq';
+    };
+
+    const msgs = [];
     runs.forEach(r => {
-      if (r.dia !== undefined || r.lado !== null || !r.xs.length) return;
-      if (esq.length) r.lado = xmin(r) <= mediana(esq) + tol ? 'esq' : 'dir';
-      else if (dir.length) r.lado = xmin(r) >= Math.min(...dir) - tol ? 'dir' : 'esq';
+      if (r.dia !== undefined) { msgs.push({ dia: r.dia }); return; }
+      if (r.lado) { r.blocos.forEach((b, k) => msgs.push({ lado: r.lado, nome: r.nome, data: k === 0 ? r.data : '', texto: b.texto })); return; }
+      r.blocos.forEach(b => { // sem cabeçalho: parágrafos seguidos do mesmo lado são uma mensagem só
+        const lado = ladoDoBloco(b), ult = msgs[msgs.length - 1];
+        if (ult && ult.semCab && ult.lado === lado) ult.texto += '\n' + b.texto;
+        else msgs.push({ lado, nome: '', data: '', texto: b.texto, semCab: true });
+      });
     });
 
-    const autor = r => r.lado === 'dir' ? (nomeEu.trim() || 'Eu') : r.lado === 'esq' ? (r.nome || 'Outro') : 'Desconhecido';
-    const partes = [];
-    runs.forEach(r => {
-      if (r.dia !== undefined) { partes.push('— ' + r.dia + ' —'); return; }
-      r.blocos.forEach((b, k) => partes.push(autor(r) + (k === 0 && r.data ? ' (' + r.data + ')' : '') + ': ' + b));
-    });
-    return { texto: partes.join('\n\n'), runs };
+    const autor = m => m.lado === 'dir' ? (nomeEu.trim() || 'Eu') : (m.nome || nomeOutro.trim() || 'Outro');
+    const texto = msgs.map(m => m.dia !== undefined ? '— ' + m.dia + ' —' : autor(m) + (m.data ? ' (' + m.data + ')' : '') + ': ' + m.texto).join('\n\n');
+    return { texto, msgs };
   }
 
   // ================= leitura da imagem (Tesseract.js, no navegador) =================
@@ -145,7 +162,7 @@ textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: 
   const mostrar = (t, erro) => { estado.textContent = t; estado.className = 'rotulo' + (erro ? ' erro' : ''); };
 
   function montarTudo() {
-    const partes = imagens.map(a => linhasDe.get(a)).filter(Boolean).map(l => montarConversa(l, meuNome.value).texto).filter(Boolean);
+    const partes = imagens.map(a => linhasDe.get(a)).filter(Boolean).map(l => montarConversa(l, meuNome.value, outroNome.value).texto).filter(Boolean);
     saida.value = partes.join('\n\n');
   }
 
@@ -184,7 +201,7 @@ textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: 
   };
   // colar em qualquer lugar da página
   document.addEventListener('paste', e => {
-    if (e.target === meuNome) return;
+    if (e.target === meuNome || e.target === outroNome) return;
     const cd = e.clipboardData; if (!cd) return;
     const imgs = arquivosDe(cd);
     if (imgs.length) { e.preventDefault(); adicionar(imgs); }
@@ -197,6 +214,7 @@ textarea { width: 100%; height: 340px; font: 14px/1.5 var(--mono); white-space: 
   zona.addEventListener('drop', e => { e.preventDefault(); zona.classList.remove('sobre'); adicionar(e.dataTransfer.files); });
 
   meuNome.addEventListener('input', () => { try { localStorage.setItem('cf:colagem:eu', meuNome.value); } catch (e) {} montarTudo(); });
+  outroNome.addEventListener('input', () => { try { localStorage.setItem('cf:colagem2:outro', outroNome.value); } catch (e) {} montarTudo(); });
   $('copiar').onclick = async () => {
     if (!saida.value) return;
     try { await navigator.clipboard.writeText(saida.value); mostrar('Copiado.'); }
