@@ -41,6 +41,7 @@ const ICONES = {
   livro: 'M5 4h13v16H5zM5 17h13M8 8h7',
   menu: 'M4 7h16M4 12h16M4 17h16',
   chave: 'M8 15a4 4 0 1 1 3.9-4.9L20 12v3h-3v3h-3v-2.2L11.9 15zM7.5 10.5h.01',
+  'chave-openai': 'M8 15a4 4 0 1 1 3.9-4.9L20 12v3h-3v3h-3v-2.2L11.9 15zM7.5 10.5h.01',
   mais: 'M12 5v14M5 12h14',
   fechar: 'M6 6l12 12M18 6L6 18',
 };
