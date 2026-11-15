@@ -18,6 +18,7 @@ textarea { width: 100%; font: 14px/1.55 var(--mono); }
 #estado { font-size: 13px; color: var(--muted); }
 #estado.erro { color: var(--bad); }
 #estado.ok { color: var(--ok); }
+.opcao { display: flex; align-items: center; gap: 6px; }
 details { margin-top: 24px; }
 summary { cursor: pointer; color: var(--muted); font-size: 13px; }
 details .campo { margin-top: 12px; }
@@ -37,6 +38,7 @@ details input[type=text] { max-width: 240px; font-family: var(--mono); }
   <div class="acoes">
     <button id="converter" class="primary">Converter</button>
     <button id="limpar">Limpar</button>
+    <label class="opcao" title="Mais lento e custa um pouco mais; o modelo confere afirmações duvidosas na internet antes de escrever as observações"><input type="checkbox" id="pesquisar"> Conferir com pesquisa na web</label>
     <span id="estado" role="status"></span>
   </div>
 
@@ -78,9 +80,16 @@ A anotação deve parecer escrita por um aluno organizado, e não o resumo de um
 - Use listas com "* " para vantagens, características e itens. Use comparações no formato "A vs. B".
 - Sem negrito, sem markdown, sem emojis. Texto simples, impessoal e em português claro.
 - Mantenha os termos técnicos em inglês quando forem os usados no mercado, com o equivalente em português entre parênteses na primeira vez (ex.: Reverse Proxy (Proxy Reverso)).
-- Não perca nenhum conceito, comparação ou conclusão do resumo original.
-- Pode completar com conhecimento geral correto sobre o assunto, como no exemplo, para que cada ponto faça sentido sozinho. Nunca contradiga o resumo e, se não tiver certeza de algo, deixe de fora.
+- Não perca nenhum conceito, comparação ou conclusão do resumo original, e não altere o que o vídeo afirma: o conteúdo original continua na anotação.
+- Pode completar com conhecimento geral correto sobre o assunto, como no exemplo, para que cada ponto faça sentido sozinho.
 - Termine com a conclusão ou o uso prático, se o resumo tiver.
+
+Rigor científico (importante):
+- Se o vídeo afirmar algo inexato, desatualizado, simplificado demais, controverso ou sem base científica, mantenha a afirmação como o vídeo a fez e acrescente logo depois uma observação curta começando com "Obs.:", com a informação correta ou o estado do conhecimento. Exemplo: se o vídeo disser que a Terra é plana, a anotação traz essa afirmação seguida de "Obs.: a Terra não é plana; é aproximadamente esférica. Pode-se tratá-la como plana apenas para fins de cálculos em pequenas distâncias."
+- Nunca transforme informação inexata em verdade: não reescreva a afirmação como se fosse correta e não a omita para evitar a observação.
+- Quando o assunto for debatido ou houver incerteza, diga isso na observação ("há debate", "depende de…"), sem afirmar além do que a ciência estabelece. Não dê opinião.
+- Não invente dados, números, estudos ou fontes. Se não tiver certeza de que algo está errado, não corrija: no máximo sinalize que a afirmação não é consensual.
+- Só escreva "Obs.:" quando houver motivo; não comente o que está correto.
 
 Responda somente com a anotação, sem comentários e sem bloco de código.
 
@@ -126,10 +135,12 @@ Uso combinado: Apache e NGINX não são necessariamente alternativas excludentes
     gravar(k, v) { try { localStorage.setItem('cf:resumo-em-anotacao:' + k, v); } catch (e) {} },
   };
   modelo.value = ARM.ler('modelo', MODELO_PADRAO);
-  instrucao.value = ARM.ler('instrucao', INSTRUCAO_PADRAO);
+  instrucao.value = ARM.ler('instrucao2', INSTRUCAO_PADRAO);
   modelo.addEventListener('input', () => ARM.gravar('modelo', modelo.value.trim() || MODELO_PADRAO));
-  instrucao.addEventListener('input', () => ARM.gravar('instrucao', instrucao.value));
-  $('restaurar').onclick = () => { instrucao.value = INSTRUCAO_PADRAO; ARM.gravar('instrucao', INSTRUCAO_PADRAO); };
+  instrucao.addEventListener('input', () => ARM.gravar('instrucao2', instrucao.value));
+  $('restaurar').onclick = () => { instrucao.value = INSTRUCAO_PADRAO; ARM.gravar('instrucao2', INSTRUCAO_PADRAO); };
+  $('pesquisar').checked = ARM.ler('pesquisa', '') === 'sim';
+  $('pesquisar').addEventListener('change', () => ARM.gravar('pesquisa', $('pesquisar').checked ? 'sim' : 'nao'));
 
   const contar = () => {
     $('nEntrada').textContent = entrada.value ? entrada.value.length + ' caracteres' : '';
@@ -137,6 +148,63 @@ Uso combinado: Apache e NGINX não são necessariamente alternativas excludentes
   };
   const dizer = (texto, tipo) => { estado.textContent = texto; estado.className = tipo || ''; };
   entrada.addEventListener('input', contar);
+
+  // anotação pede fidelidade ao conteúdo; modelos de raciocínio (gpt-5, o1, o3…) não aceitam temperatura
+  const TEMP = nome => (/^gpt-(3|4)/.test(nome) ? { temperature: 0.3 } : {});
+
+  async function pedir(url, chave, corpo) {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + chave },
+      body: JSON.stringify(corpo),
+    });
+    const dados = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const msg = (dados.error && dados.error.message) || ('erro ' + r.status);
+      const e = new Error(r.status === 401 ? 'A OpenAI recusou a chave (' + msg + ')' : r.status === 429 ? 'Limite ou saldo da OpenAI esgotado (' + msg + ')' : msg);
+      e.status = r.status;
+      throw e;
+    }
+    return dados;
+  }
+
+  async function chamarSimples(chave, nomeModelo, resumo) {
+    const dados = await pedir('https://api.openai.com/v1/chat/completions', chave, Object.assign({
+      model: nomeModelo,
+      messages: [
+        { role: 'system', content: instrucao.value },
+        { role: 'user', content: '<resumo>\n' + resumo + '\n</resumo>' },
+      ],
+    }, TEMP(nomeModelo)));
+    return { texto: ((dados.choices && dados.choices[0] && dados.choices[0].message.content) || '').trim(), fontes: [] };
+  }
+
+  // Com pesquisa: usa a API de respostas da OpenAI, que deixa o modelo buscar na web antes de escrever.
+  async function chamarComPesquisa(chave, nomeModelo, resumo) {
+    const extra = '\n\nVocê tem uma ferramenta de busca na web. Use-a para conferir as afirmações factuais que pareçam duvidosas ANTES de escrever as observações "Obs.:". Não pesquise o que for básico. Não coloque links nem citações dentro do texto.';
+    let dados, ultimo;
+    for (const tipo of ['web_search', 'web_search_preview']) {
+      try {
+        dados = await pedir('https://api.openai.com/v1/responses', chave, Object.assign({
+          model: nomeModelo,
+          instructions: instrucao.value + extra,
+          input: '<resumo>\n' + resumo + '\n</resumo>',
+          tools: [{ type: tipo }],
+        }, TEMP(nomeModelo)));
+        break;
+      } catch (e) { ultimo = e; if (e.status !== 400) throw e; }
+    }
+    if (!dados) throw ultimo;
+    const partes = (dados.output || []).filter(o => o.type === 'message').flatMap(o => o.content || []);
+    let texto = partes.filter(c => c.type === 'output_text').map(c => c.text).join('\n').trim();
+    // se o modelo deixou links no meio do texto, tira: as fontes vão numa lista no fim
+    texto = texto.replace(/\s*\(\[[^\]]*\]\([^)]*\)\)/g, '').replace(/\s*\[[^\]]*\]\(https?:[^)]*\)/g, '');
+    const vistos = new Map();
+    partes.flatMap(c => c.annotations || []).filter(a => a.type === 'url_citation').forEach(a => {
+      try { const u = new URL(a.url); u.searchParams.delete('utm_source'); if (!vistos.has(u.href)) vistos.set(u.href, a.title || ''); } catch (e) {}
+    });
+    return { texto, fontes: [...vistos].map(([url, titulo]) => ({ url, titulo })) };
+  }
 
   let ocupado = false;
   async function converter() {
@@ -152,25 +220,11 @@ Uso combinado: Apache e NGINX não são necessariamente alternativas excludentes
     const nomeModelo = modelo.value.trim() || MODELO_PADRAO;
     ocupado = true; $('converter').disabled = true; dizer('Convertendo…'); saida.value = ''; contar();
     try {
-      const r = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + chave },
-        body: JSON.stringify(Object.assign({
-          model: nomeModelo,
-          messages: [
-            { role: 'system', content: instrucao.value },
-            { role: 'user', content: '<resumo>\n' + resumo + '\n</resumo>' },
-          ],
-          // anotação pede fidelidade ao conteúdo; modelos de raciocínio (gpt-5, o1, o3…) não aceitam temperatura
-        }, /^gpt-(3|4)/.test(nomeModelo) ? { temperature: 0.3 } : {})),
-      });
-      const dados = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        const msg = (dados.error && dados.error.message) || ('erro ' + r.status);
-        throw new Error(r.status === 401 ? 'A OpenAI recusou a chave (' + msg + ')' : r.status === 429 ? 'Limite ou saldo da OpenAI esgotado (' + msg + ')' : msg);
-      }
-      saida.value = ((dados.choices && dados.choices[0] && dados.choices[0].message.content) || '').trim();
-      dizer(saida.value ? 'Pronto.' : 'A resposta veio vazia.', saida.value ? 'ok' : 'erro');
+      const { texto, fontes } = $('pesquisar').checked
+        ? await chamarComPesquisa(chave, nomeModelo, resumo)
+        : await chamarSimples(chave, nomeModelo, resumo);
+      saida.value = texto + (texto && fontes.length ? '\n\nFontes consultadas:\n' + fontes.map(f => '- ' + (f.titulo ? f.titulo + ': ' : '') + f.url).join('\n') : '');
+      dizer(texto ? 'Pronto.' : 'A resposta veio vazia.', texto ? 'ok' : 'erro');
     } catch (e) {
       dizer(e instanceof TypeError ? 'Não consegui ler a resposta da OpenAI. Costuma ser chave inválida (a OpenAI recusa sem liberar a leitura) ou falta de internet. Confira a chave na aba Chave da OpenAI.' : e.message, 'erro');
     } finally {
