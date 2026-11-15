@@ -9,6 +9,7 @@ const ICONES = {
   'contador-de-texto': 'M4 6h16M4 11h16M4 16h9M17 14v6M14 17h6',
   'receber-colagem': 'M9 3h6v4H9zM9 5H6v16h12V5h-3M9 12h6M9 16h6',
   'teste-de-colagem': 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8',
+  'resumo-em-anotacao': 'M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h7M9 8h3',
   'ajuste-de-prompt': 'M4 20L16 8M14 4v3M12.5 5.5h3M19 12v3M17.5 13.5h3',
   'lista-de-tarefas': 'M4 5h4v4H4zM4 15h4v4H4zM11 7h9M11 17h9M5 7l1 1 2-2.5',
   // mixer: famílias
