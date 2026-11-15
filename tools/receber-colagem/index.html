@@ -8,35 +8,42 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Crect%20width%3D%2724%27%20height%3D%2724%27%20fill%3D%27%23131516%27/%3E%3Cpath%20d%3D%27M9%203h6v4H9zM9%205H6v16h12V5h-3M9%2012h6M9%2016h6%27%20fill%3D%27none%27%20stroke%3D%27%23d4a24c%27%20stroke-width%3D%271.8%27%20stroke-linecap%3D%27square%27%20transform%3D%27translate%283%203%29%20scale%28.75%29%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../../tema.css">
 <style>
-.campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.passo { margin-bottom: 26px; }
+.passo > h2 { margin-bottom: 10px; }
 textarea { width: 100%; height: 150px; font: 14px/1.5 var(--mono); white-space: pre; tab-size: 4; }
-.acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-#origem { color: var(--accent); }
+.acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.opcao { display: flex; align-items: center; gap: 6px; }
+.rotulo.estado { min-height: 1.2em; }
 
-.nomes { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.zonaPrint { min-height: 64px; padding: 12px; background: var(--surface); border: 1px dashed var(--line-2); border-radius: var(--r); color: var(--muted); overflow: hidden; max-height: 64px; }
+.zonaPrint:focus { outline: none; border-color: var(--accent); border-style: solid; }
+.zonaPrint:empty::before { content: attr(data-vazio); }
+#prints { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+#prints li { display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; align-items: center; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+#prints img { width: 72px; height: 48px; object-fit: cover; border-radius: 2px; background: var(--bg); }
+#prints .nomeArq { font-size: 13px; overflow-wrap: anywhere; }
+#prints .situacao { font-size: 12px; color: var(--muted); }
+#prints .situacao.ok { color: var(--ok); }
+#prints .situacao.erro { color: var(--bad); }
+#prints button { padding: 4px 9px; }
+
+.nomes { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .nomes label { display: flex; flex-direction: column; gap: 4px; }
 .nomes input { width: 180px; }
-
-#msgs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.opcoes { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+#msgs { display: flex; flex-direction: column; gap: 6px; }
 .msg { display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: start; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+.msg .lado { display: flex; flex-direction: column; gap: 4px; }
 .msg .quem { justify-content: center; width: 100%; padding: 5px 8px; font-size: 13px; }
 .msg.eu .quem { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.msg .fonte { font-size: 11px; color: var(--muted); text-align: center; }
 .msg .corpo { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
 .msg .resposta { color: var(--muted); font-size: 12px; margin-bottom: 4px; border-left: 2px solid var(--line-2); padding-left: 8px; }
-.dica { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
-.opcoes { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
-.opcoes label { display: flex; align-items: center; gap: 6px; }
 @media (max-width: 560px) { .msg { grid-template-columns: 1fr; } }
 
-.print { margin: 4px 0 14px; }
-.print > label { display: block; margin-bottom: 8px; }
-#estadoOcr { margin: 8px 0 0; min-height: 1.2em; }
-.print input[type=file] { font-size: 13px; color: var(--muted); }
-details { margin-top: 22px; }
+details { margin-top: 18px; }
 summary { cursor: pointer; color: var(--muted); font-size: 13px; }
 details textarea { height: 160px; margin: 8px 0; font-size: 12px; white-space: pre; }
-details .acoes { margin-bottom: 12px; }
-.opcao { display: flex; align-items: center; gap: 6px; }
 #previa { width: 100%; height: 340px; background: #fff; border: 1px solid var(--line-2); border-radius: var(--r); }
 </style>
 </head>
@@ -44,63 +51,72 @@ details .acoes { margin-bottom: 12px; }
 <main>
   <h1>Receber colagem</h1>
 
-  <div class="campo">
-    <label for="entrada">Cole aqui</label>
-    <textarea id="entrada" spellcheck="false" autofocus></textarea>
-  </div>
+  <section class="passo">
+    <h2>1. Conversa do Teams</h2>
+    <textarea id="entrada" spellcheck="false" autofocus placeholder="Copie a conversa no Teams e cole aqui (Ctrl+V)"></textarea>
+  </section>
 
-    <div class="print">
-      <label for="arqPrint">Print da conversa (opcional): escolha o arquivo, ou cole a imagem no campo acima com Ctrl+V. Pode vir antes ou depois da conversa.</label>
-      <div class="acoes">
-        <input type="file" id="arqPrint" accept="image/*" multiple>
-        <label class="opcao"><input type="checkbox" id="direitaEhEu" checked> Minhas mensagens ficam à direita</label>
-      </div>
-      <p id="estadoOcr" class="rotulo"></p>
+  <section class="passo">
+    <h2>2. Print da conversa (opcional)</h2>
+    <div class="zonaPrint" id="zonaPrint" contenteditable="true" spellcheck="false" data-vazio="Clique aqui e cole o print (Ctrl+V)"></div>
+    <div class="acoes">
+      <input type="file" id="arqPrint" accept="image/*" multiple>
+      <label class="opcao"><input type="checkbox" id="direitaEhEu" checked> Minhas mensagens ficam à direita</label>
     </div>
+    <ul id="prints"></ul>
+    <div class="acoes">
+      <button id="identificar" class="primary" disabled>Identificar autores</button>
+      <span id="estadoOcr" class="rotulo estado"></span>
+    </div>
+  </section>
 
-  <section id="painel" hidden>
+  <section id="painel" class="passo" hidden>
+    <h2>3. Quem falou</h2>
     <div class="nomes">
       <label>Seu nome <input type="text" id="nomeEu" value="Aldenor" autocomplete="off"></label>
       <label>Outra pessoa <input type="text" id="nomeOutro" value="Quintino" autocomplete="off"></label>
     </div>
-    <p class="dica">O Teams não envia quem falou. Marquei sozinho o que dá para deduzir (respostas e quem chama o outro pelo nome); no resto, clique no nome da mensagem para trocar.</p>
     <div class="opcoes">
-      <label><input type="checkbox" id="trocaSeguintes"> Trocar também as seguintes sem marca</label>
-      <label><input type="checkbox" id="incluiResposta"> Incluir a citação das respostas</label>
+      <label class="opcao"><input type="checkbox" id="trocaSeguintes"> Ao trocar, mudar também as seguintes sem marca</label>
+      <label class="opcao"><input type="checkbox" id="incluiResposta"> Incluir a citação das respostas</label>
     </div>
     <div id="msgs"></div>
   </section>
 
-  <div class="campo">
-    <label for="saida">Recebido <span id="origem"></span></label>
+  <section class="passo">
+    <h2>Resultado <span id="origem" class="rotulo"></span></h2>
     <textarea id="saida" spellcheck="false" readonly></textarea>
-  </div>
-  <div class="acoes">
-    <button id="copiar" class="primary">Copiar</button>
-    <button id="limpar">Limpar</button>
-    <span id="aviso" class="rotulo"></span>
-  </div>
-
-  <details open>
-    <summary>HTML da colagem</summary>
-    <p id="tipos" class="rotulo"></p>
-    <textarea id="bruto" spellcheck="false" aria-label="HTML" placeholder="O HTML da colagem aparece aqui. Também dá para colar ou escrever um HTML e executar."></textarea>
     <div class="acoes">
-      <button id="executar" class="primary">Executar</button>
-      <button id="lerHtml">Ler como conversa</button>
+      <button id="copiar" class="primary">Copiar</button>
+      <button id="limpar">Limpar</button>
+      <span id="aviso" class="rotulo"></span>
+    </div>
+  </section>
+
+  <details>
+    <summary>Detalhes da leitura do print</summary>
+    <textarea id="diag" spellcheck="false" readonly aria-label="Detalhes da leitura do print"></textarea>
+  </details>
+
+  <details>
+    <summary>Avançado: HTML da colagem</summary>
+    <p id="tipos" class="rotulo"></p>
+    <textarea id="bruto" spellcheck="false" aria-label="HTML" placeholder="O HTML da colagem aparece aqui. Também dá para colar ou escrever um HTML e usar os botões abaixo."></textarea>
+    <div class="acoes">
+      <button id="executar">Mostrar o HTML renderizado</button>
+      <button id="lerHtml">Ler este HTML como conversa</button>
       <label class="opcao"><input type="checkbox" id="comScripts"> Permitir scripts</label>
     </div>
-    <iframe id="previa" sandbox title="Resultado do HTML"></iframe>
+    <iframe id="previa" sandbox title="Resultado do HTML" style="margin-top:10px"></iframe>
   </details>
 </main>
 
 <script>
   const $ = id => document.getElementById(id);
-  const entrada = $('entrada'), saida = $('saida'), origem = $('origem'), tipos = $('tipos'), bruto = $('bruto');
-  const previa = $('previa');
+  const entrada = $('entrada'), saida = $('saida'), origem = $('origem'), tipos = $('tipos'), bruto = $('bruto'), previa = $('previa');
   const painel = $('painel'), listaMsgs = $('msgs'), nomeEu = $('nomeEu'), nomeOutro = $('nomeOutro'), aviso = $('aviso');
+  const estadoOcr = $('estadoOcr'), diagEl = $('diag');
 
-  // nomes lembrados neste navegador
   try {
     nomeEu.value = localStorage.getItem('cf:colagem:eu') || nomeEu.value;
     nomeOutro.value = localStorage.getItem('cf:colagem:outro') || nomeOutro.value;
@@ -109,7 +125,7 @@ details .acoes { margin-bottom: 12px; }
   const BLOCOS = new Set(['ADDRESS','ARTICLE','ASIDE','BLOCKQUOTE','BR','DD','DIV','DL','DT','FIELDSET','FIGCAPTION','FIGURE','FOOTER','FORM','H1','H2','H3','H4','H5','H6','HEADER','HR','LI','MAIN','NAV','OL','P','PRE','SECTION','TABLE','TR','UL']);
   const IGNORAR = new Set(['SCRIPT','STYLE','TEMPLATE','HEAD','NOSCRIPT']);
 
-  // ---------- HTML genérico -> texto (colagens que não são do Teams) ----------
+  // ================= HTML -> texto =================
   function htmlParaTexto(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     let out = '';
@@ -124,8 +140,7 @@ details .acoes { margin-bottom: 12px; }
     return out.split('\n').map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
   }
 
-  // ---------- Teams ----------
-  // <span data-teams> > um <span> por mensagem > <p>/<ul> com o texto. Respostas vêm num
+  // Teams: <span data-teams> > um <span> por mensagem > <p>/<ul>. Respostas vêm num
   // <blockquote itemtype=".../Reply"> com o autor e a prévia da mensagem citada.
   function textoInline(no) {
     if (no.nodeType === 3) return no.nodeValue.replace(/\s*\n\s*/g, ' ').replace(/ /g, ' ');
@@ -149,8 +164,8 @@ details .acoes { margin-bottom: 12px; }
       let resposta = null;
       const q = msg.querySelector('blockquote');
       if (q) {
-        const autor = q.querySelector('[itemprop="mri"]'), previa = q.querySelector('[itemprop="preview"]');
-        resposta = { autor: autor ? autor.textContent.trim() : '', previa: previa ? textoInline(previa).trim() : '' };
+        const autor = q.querySelector('[itemprop="mri"]'), prev = q.querySelector('[itemprop="preview"]');
+        resposta = { autor: autor ? autor.textContent.trim() : '', previa: prev ? textoInline(prev).trim() : '' };
       }
       const temLink = !!msg.querySelector('a[itemtype*="HyperLink"]');
       const linhas = [];
@@ -174,47 +189,57 @@ details .acoes { margin-bottom: 12px; }
     }).filter(m => m.texto || m.resposta);
   }
 
-  // ---------- quem falou ----------
-  let msgs = [];          // { texto, resposta, quem: 'eu'|'outro', manual }
+  // ================= quem falou: marcas em camadas =================
+  // Cada mensagem pode ter três fontes, da mais forte para a mais fraca:
+  //   manual (você clicou)  >  ocr (print)  >  pista (resposta ou nome no começo).
+  // Sem nenhuma, segue a mensagem anterior. Editar o nome só refaz as pistas.
+  let msgs = []; // { texto, resposta, manual, ocr, pista, pistaFonte, quem }
   const nome = quem => (quem === 'eu' ? nomeEu.value.trim() || 'Eu' : nomeOutro.value.trim() || 'Outro');
 
-  function atribuir() {
+  function calcularPistas() {
     const tok = el => el.value.trim().split(/\s+/)[0].toLowerCase();
     const eu = tok(nomeEu), outro = tok(nomeOutro);
     const cita = (texto, n) => !!n && texto.toLowerCase().split(/[^\p{L}\p{N}]+/u).includes(n);
     msgs.forEach(m => {
-      m.manual = false;
-      // 1) uma resposta a mensagem de um lado vem do outro lado
-      if (m.resposta && m.resposta.autor && eu) {
-        m.quem = m.resposta.autor.toLowerCase().includes(eu) ? 'outro' : 'eu'; m.manual = true; return;
+      m.pista = null; m.pistaFonte = '';
+      if (m.resposta && m.resposta.autor && eu) { // resposta a mensagem de um lado vem do outro lado
+        m.pista = m.resposta.autor.toLowerCase().includes(eu) ? 'outro' : 'eu'; m.pistaFonte = 'pela resposta'; return;
       }
-      // 2) quem chama alguém pelo nome no começo da mensagem ("Opa Aldenor", "Quintino, ...") não é essa pessoa
-      const inicio = m.texto.slice(0, 60);
-      const falaComEu = cita(inicio, eu), falaComOutro = cita(inicio, outro);
-      if (falaComEu !== falaComOutro) { m.quem = falaComEu ? 'outro' : 'eu'; m.manual = true; }
+      const inicio = m.texto.slice(0, 60); // quem chama alguém pelo nome ("Opa Aldenor") não é essa pessoa
+      const comEu = cita(inicio, eu), comOutro = cita(inicio, outro);
+      if (comEu !== comOutro) { m.pista = comEu ? 'outro' : 'eu'; m.pistaFonte = 'pelo nome'; }
     });
-    // o que ficou sem pista segue o bloco anterior
-    msgs.forEach((m, k) => { if (!m.manual) m.quem = k ? msgs[k - 1].quem : 'outro'; });
   }
+  function resolver() {
+    let ant = 'outro';
+    msgs.forEach(m => { m.quem = m.manual || m.ocr || m.pista || ant; ant = m.quem; });
+  }
+  const fonteDe = m => m.manual ? 'marcado por você' : m.ocr ? 'pelo print' : m.pista ? m.pistaFonte : 'segue a anterior';
 
   function trocar(i) {
-    const alvo = msgs[i].quem === 'eu' ? 'outro' : 'eu';
-    msgs[i].quem = alvo; msgs[i].manual = true;
-    if ($('trocaSeguintes').checked) for (let j = i + 1; j < msgs.length && !msgs[j].manual; j++) msgs[j].quem = alvo;
-    desenhar();
+    const antes = msgs.map(m => m.quem);
+    msgs[i].manual = antes[i] === 'eu' ? 'outro' : 'eu';
+    if (!$('trocaSeguintes').checked) {
+      // só esta mensagem: as seguintes sem marca mantêm o lado que já tinham
+      for (let j = i + 1; j < msgs.length && !msgs[j].manual && !msgs[j].ocr && !msgs[j].pista; j++) msgs[j].manual = antes[j];
+    }
+    resolver(); desenhar();
   }
 
   function linhaDe(m) {
     let t = nome(m.quem) + ': ';
-    if (m.resposta && $('incluiResposta').checked) t +='(em resposta a ' + (m.resposta.autor || 'outra mensagem') + (m.resposta.previa ? ': "' + m.resposta.previa + '"' : '') + ')\n';
+    if (m.resposta && $('incluiResposta').checked) t += '(em resposta a ' + (m.resposta.autor || 'outra mensagem') + (m.resposta.previa ? ': "' + m.resposta.previa + '"' : '') + ')\n';
     return t + m.texto;
   }
 
   function desenhar() {
     listaMsgs.replaceChildren(...msgs.map((m, i) => {
       const d = document.createElement('div'); d.className = 'msg ' + m.quem;
+      const lado = document.createElement('div'); lado.className = 'lado';
       const b = document.createElement('button'); b.className = 'quem'; b.textContent = nome(m.quem);
       b.title = 'Trocar quem falou'; b.onclick = () => trocar(i);
+      const f = document.createElement('div'); f.className = 'fonte'; f.textContent = fonteDe(m);
+      lado.append(b, f);
       const c = document.createElement('div'); c.className = 'corpo';
       if (m.resposta) {
         const r = document.createElement('div'); r.className = 'resposta';
@@ -222,7 +247,7 @@ details .acoes { margin-bottom: 12px; }
         c.append(r);
       }
       c.append(document.createTextNode(m.texto));
-      d.append(b, c); return d;
+      d.append(lado, c); return d;
     }));
     saida.value = msgs.map(linhaDe).join('\n\n');
   }
@@ -230,13 +255,85 @@ details .acoes { margin-bottom: 12px; }
   $('incluiResposta').addEventListener('change', () => { if (msgs.length) desenhar(); });
   [nomeEu, nomeOutro].forEach((el, k) => el.addEventListener('input', () => {
     try { localStorage.setItem(k ? 'cf:colagem:outro' : 'cf:colagem:eu', el.value); } catch (e) {}
-    if (msgs.length) { atribuir(); desenhar(); }
+    if (msgs.length) { calcularPistas(); resolver(); desenhar(); } // só as pistas: manual e print ficam
   }));
 
-  // ---------- print da conversa (OCR no navegador) ----------
-  // O leitor de texto (Tesseract.js) roda aqui mesmo: a imagem não sai do seu computador.
-  // Ele devolve cada linha com a posição na imagem. No Teams as suas mensagens ficam à direita
-  // e as da outra pessoa à esquerda; juntando isso ao texto exato do HTML descobrimos o autor.
+  // ================= casar o print com as mensagens =================
+  const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  function distancia(a, b) {
+    const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+    let ant = Array.from({ length: n + 1 }, (_, j) => j);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) cur[j] = Math.min(ant[j] + 1, cur[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      ant = cur;
+    }
+    return ant[n];
+  }
+  const parecido = (a, b) => 1 - distancia(a, b) / Math.max(a.length, b.length, 1);
+
+  // Cabeçalho de um trecho: [nome] dia-ou-data hora, ex.: "sexta-feira 11:58" ou "Mateus Quintino sexta-feira 13:07".
+  // Exigir o dia/data evita confundir "às 14:30" dentro de uma mensagem com um cabeçalho.
+  const CABECALHO = /(?:^|\s)(?:segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo)(?:-feira)?\s+(?:[àa]s\s+)?(?:[01]?\d|2[0-3])[:.][0-5]\d|(?:^|\s)(?:hoje|ontem|today|yesterday|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+(?:[àa]s\s+|at\s+)?(?:[01]?\d|2[0-3])[:.][0-5]\d|(?:^|\s)\d{1,2}[\/.]\d{1,2}(?:[\/.]\d{2,4})?,?\s+(?:[àa]s\s+)?(?:[01]?\d|2[0-3])[:.][0-5]\d/i;
+
+  // linhas: [{ t, n, x0, x1 }] (texto, texto normalizado e margens em pixels da imagem original).
+  // Devolve as marcas ('eu'/'outro') só das mensagens que foram achadas e têm cabeçalho acima.
+  function casarPrint(textos, linhas, direitaEhEu) {
+    const maxX1 = Math.max(1, ...linhas.map(l => l.x1)); // a margem direita do próprio chat
+
+    // 1) onde cada mensagem começa no print
+    const chaves = textos.map(t => norm(t.split('\n')[0]).slice(0, 26));
+    const curtas = chaves.map(c => c.length < 8); // "Blz", "Deu sim": se repetem e dariam falso positivo
+    const buscar = (chave, de, ate) => {
+      let melhor = -1, melhorS = 0;
+      for (let j = de; j < ate; j++) {
+        for (let off = 0; off <= 6; off++) { // tolera lixo no começo da linha (a foto de perfil sai como "[vo]")
+          const s = parecido(chave, linhas[j].n.slice(off, off + chave.length));
+          if (s > melhorS) { melhorS = s; melhor = j; }
+        }
+        if (melhorS >= 0.95) break;
+      }
+      return { melhor, melhorS };
+    };
+    const ondeComeca = {}; // índice da mensagem -> linha do print
+    // 1a) as mensagens longas são confiáveis: acham-se em ordem, de cima para baixo
+    let p = 0;
+    chaves.forEach((c, i) => {
+      if (c.length < 2 || curtas[i]) return;
+      const { melhor, melhorS } = buscar(c, p, linhas.length);
+      if (melhor >= 0 && melhorS >= 0.72) { ondeComeca[i] = melhor; p = melhor + 1; }
+    });
+    // 1b) as curtas só valem entre a mensagem anterior já achada e a próxima longa achada
+    let ultima = -1;
+    chaves.forEach((c, i) => {
+      if (ondeComeca[i] !== undefined) { ultima = ondeComeca[i]; return; }
+      if (c.length < 2 || !curtas[i]) return;
+      let prox = linhas.length;
+      for (let k = i + 1; k < textos.length; k++) if (ondeComeca[k] !== undefined) { prox = ondeComeca[k]; break; }
+      const { melhor, melhorS } = buscar(c, ultima + 1, prox);
+      if (melhor >= 0 && melhorS >= 0.99) { ondeComeca[i] = melhor; ultima = melhor; }
+    });
+    const achadas = Object.keys(ondeComeca).map(i => ({ i: +i, linha: ondeComeca[i] }));
+
+    // 2) cabeçalhos: linhas de dia+hora que não são começo de mensagem. O seu fica encostado
+    //    na margem direita do chat; o da outra pessoa (nome + hora) fica à esquerda.
+    const daMsg = new Set(achadas.map(a => a.linha));
+    const cabecalhos = [];
+    linhas.forEach((l, j) => {
+      if (daMsg.has(j) || l.t.length > 70 || !CABECALHO.test(l.t)) return;
+      cabecalhos.push({ j, direita: l.x1 >= 0.85 * maxX1 && l.x0 >= 0.4 * maxX1 });
+    });
+
+    // 3) cada mensagem herda o lado do cabeçalho logo acima dela
+    const marcas = {};
+    achadas.forEach(a => {
+      const acima = cabecalhos.filter(c => c.j < a.linha).pop();
+      if (acima) marcas[a.i] = acima.direita === direitaEhEu ? 'eu' : 'outro';
+    });
+    return { achadas, cabecalhos, marcas, maxX1 };
+  }
+
+  // ================= OCR (Tesseract.js, roda no navegador) =================
   const TESSERACT = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
   let carregandoOcr = null;
   const carregarOcr = () => window.Tesseract ? Promise.resolve() : (carregandoOcr = carregandoOcr || new Promise((ok, falha) => {
@@ -256,139 +353,149 @@ details .acoes { margin-bottom: 12px; }
     // tema escuro (texto claro no fundo escuro): inverte, que é como o leitor funciona melhor
     if (soma / (d.length / 4) < 128) for (let i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = 255 - d[i];
     g.putImageData(img, 0, 0);
-    return { canvas: c, k, largura: bmp.width };
+    return { canvas: c, k };
   }
 
-  const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  function distancia(a, b) {
-    const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
-    let ant = Array.from({ length: n + 1 }, (_, j) => j);
-    for (let i = 1; i <= m; i++) {
-      const cur = [i];
-      for (let j = 1; j <= n; j++) cur[j] = Math.min(ant[j] + 1, cur[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-      ant = cur;
-    }
-    return ant[n];
+  async function lerImagem(pr) {
+    await carregarOcr();
+    const { canvas, k } = await prepararImagem(pr.arquivo);
+    const r = await Tesseract.recognize(canvas, 'por', {
+      logger: m => { if (m.status === 'recognizing text') { pr.situacao = 'lendo… ' + Math.round(m.progress * 100) + '%'; desenharPrints(); } },
+    });
+    const d = r.data;
+    const brutas = d.lines || (d.blocks || []).flatMap(b => b.paragraphs.flatMap(p => p.lines));
+    pr.linhas = brutas.map(l => ({ t: l.text.trim(), n: norm(l.text), x0: l.bbox.x0 / k, x1: l.bbox.x1 / k })).filter(l => l.n.length >= 2);
   }
-  const parecido = (a, b) => 1 - distancia(a, b) / Math.max(a.length, b.length, 1);
 
-  // Cada trecho de mensagens do mesmo autor tem um cabeçalho com a hora. No Teams o seu cabeçalho
-  // fica encostado à direita (só a hora) e o da outra pessoa à esquerda (nome e hora). Cada
-  // mensagem pertence ao cabeçalho que vem logo acima dela.
-  const temHora = /(^|[^0-9])([01]?[0-9]|2[0-3]):[0-5][0-9]/;
+  // ================= lista de prints e botão =================
+  let prints = []; // { id, arquivo, url, linhas, situacao, cls }
+  let seq = 0;
+  const atualizarBotao = () => { $('identificar').disabled = !(msgs.length && prints.length); };
 
-  async function lerPrint(arquivo, ordem, total) {
-    const estado = $('estadoOcr');
-    if (!msgs.length) { estado.textContent = 'Cole primeiro a conversa do Teams; depois o print.'; return; }
-    try {
-      estado.textContent = 'Carregando o leitor de texto…';
-      await carregarOcr();
-      const { canvas, k, largura } = await prepararImagem(arquivo);
-      const r = await Tesseract.recognize(canvas, 'por', {
-        logger: m => { if (m.status === 'recognizing text') estado.textContent = 'Lendo o print ' + ordem + '/' + total + '… ' + Math.round(m.progress * 100) + '%'; else if (m.status) estado.textContent = 'Preparando (' + m.status + ')…'; },
-      });
-      const data = r.data;
-      const linhas = (data.lines || (data.blocks || []).flatMap(b => b.paragraphs.flatMap(p => p.lines)))
-        .map(l => ({ t: l.text.trim(), n: norm(l.text), x0: l.bbox.x0 / k }))
-        .filter(l => l.n.length >= 2);
-
-      // 1) acha, para cada mensagem do HTML, a linha do print onde ela começa
-      let p = 0;
-      const achadas = [];
-      msgs.forEach((m, i) => {
-        const chave = norm(m.texto.split('\n')[0]).slice(0, 26);
-        if (chave.length < 2) return;
-        let melhor = -1, melhorS = 0;
-        for (let j = p; j < linhas.length; j++) {
-          // tolera lixo no começo da linha (a foto de perfil costuma sair como "[vo]")
-          for (let off = 0; off <= 6; off++) {
-            const s = parecido(chave, linhas[j].n.slice(off, off + chave.length));
-            if (s > melhorS) { melhorS = s; melhor = j; }
-          }
-          if (melhorS >= 0.95) break;
-        }
-        if (melhor >= 0 && melhorS >= (chave.length < 8 ? 0.99 : 0.72)) { achadas.push({ i, linha: melhor }); p = melhor + 1; }
-      });
-      if (!achadas.length) { estado.textContent = 'Print ' + ordem + ': não achei nenhuma mensagem da colagem no print.'; return; }
-
-      // 2) cabeçalhos: linhas curtas com hora que não são o começo de uma mensagem
-      const daMensagem = new Set(achadas.map(a => a.linha));
-      const cabecalhos = [];
-      linhas.forEach((l, j) => { if (!daMensagem.has(j) && l.t.length <= 60 && temHora.test(l.t)) cabecalhos.push({ j, direita: l.x0 > largura * 0.5 }); });
-      if (!cabecalhos.length) { estado.textContent = 'Print ' + ordem + ': não achei os cabeçalhos com a hora (nome e horário) para saber de quem é cada mensagem.'; return; }
-
-      // 3) cada mensagem herda o lado do cabeçalho logo acima dela
-      const direitaEhEu = $('direitaEhEu').checked;
-      let marcadas = 0;
-      achadas.forEach(a => {
-        const acima = cabecalhos.filter(c => c.j < a.linha).pop();
-        if (!acima) return; // o print começa no meio do trecho: sem cabeçalho acima, fica como estava
-        msgs[a.i].quem = acima.direita === direitaEhEu ? 'eu' : 'outro'; msgs[a.i].manual = true; marcadas++;
-      });
-      desenhar();
-      estado.textContent = 'Print ' + ordem + '/' + total + ': marquei ' + marcadas + ' de ' + msgs.length + ' mensagens pelos cabeçalhos (' + cabecalhos.length + ' cabeçalhos, ' + linhas.length + ' linhas lidas). As que não aparecem no print ficam como estavam.';
-    } catch (e) { estado.textContent = 'Erro ao ler o print: ' + e.message; }
+  function desenharPrints() {
+    $('prints').replaceChildren(...prints.map(pr => {
+      const li = document.createElement('li');
+      const im = document.createElement('img'); im.src = pr.url; im.alt = '';
+      const meio = document.createElement('div');
+      const nm = document.createElement('div'); nm.className = 'nomeArq'; nm.textContent = pr.arquivo.name || 'print colado';
+      const sit = document.createElement('div'); sit.className = 'situacao ' + (pr.cls || ''); sit.textContent = pr.situacao;
+      meio.append(nm, sit);
+      const x = document.createElement('button'); x.textContent = 'Remover'; x.onclick = () => removerPrint(pr.id);
+      li.append(im, meio, x); return li;
+    }));
+    atualizarBotao();
   }
-  let pendentes = []; // prints que chegaram antes da conversa
-  async function lerPrints(arquivos) {
+
+  function adicionarPrints(arquivos) {
     const imgs = [...arquivos].filter(f => f.type.startsWith('image/'));
-    if (!imgs.length) return;
-    if (!msgs.length) {
-      pendentes.push(...imgs);
-      $('estadoOcr').textContent = pendentes.length + (pendentes.length === 1 ? ' print guardado' : ' prints guardados') + '. Agora cole a conversa do Teams no campo de cima e eu leio.';
-      return;
-    }
-    for (let i = 0; i < imgs.length; i++) await lerPrint(imgs[i], i + 1, imgs.length);
+    if (!imgs.length) { estadoOcr.textContent = 'Isso não é uma imagem.'; return; }
+    imgs.forEach(a => prints.push({ id: ++seq, arquivo: a, url: URL.createObjectURL(a), linhas: null, situacao: 'na fila', cls: '' }));
+    desenharPrints();
+    if (msgs.length) identificar();
+    else estadoOcr.textContent = imgs.length + (imgs.length === 1 ? ' print adicionado' : ' prints adicionados') + '. Falta colar a conversa do Teams (passo 1); depois eu identifico.';
   }
-  $('arqPrint').addEventListener('change', e => { lerPrints(e.target.files); e.target.value = ''; });
 
-  // ---------- colagem ----------
+  function removerPrint(id) {
+    const i = prints.findIndex(p => p.id === id); if (i < 0) return;
+    URL.revokeObjectURL(prints[i].url); prints.splice(i, 1);
+    desenharPrints();
+    if (msgs.length) { if (prints.length) identificar(); else { msgs.forEach(m => { m.ocr = null; }); resolver(); desenhar(); estadoOcr.textContent = ''; } }
+  }
+
+  let ocupado = false;
+  async function identificar() {
+    if (ocupado) return;
+    if (!msgs.length) { estadoOcr.textContent = 'Cole primeiro a conversa do Teams (passo 1).'; return; }
+    if (!prints.length) { estadoOcr.textContent = 'Adicione um print (passo 2).'; return; }
+    ocupado = true; $('identificar').disabled = true;
+    const relatorio = [];
+    try {
+      msgs.forEach(m => { m.ocr = null; });
+      for (const pr of prints) {
+        if (!pr.linhas) { estadoOcr.textContent = 'Lendo o print (na primeira vez baixa o leitor de texto)…'; pr.situacao = 'carregando…'; pr.cls = ''; desenharPrints(); await lerImagem(pr); }
+        const r = casarPrint(msgs.map(m => m.texto), pr.linhas, $('direitaEhEu').checked);
+        Object.entries(r.marcas).forEach(([i, q]) => { msgs[i].ocr = q; });
+        const n = Object.keys(r.marcas).length;
+        pr.situacao = n ? 'lido: ' + n + ' mensagens marcadas, ' + r.cabecalhos.length + ' cabeçalhos' : 'lido, mas nenhuma mensagem marcada (' + r.achadas.length + ' achadas, ' + r.cabecalhos.length + ' cabeçalhos)';
+        pr.cls = n ? 'ok' : 'erro';
+        relatorio.push('=== ' + (pr.arquivo.name || 'print') + ' ===\nmargem direita do chat: ' + Math.round(r.maxX1) + ' px\n' +
+          'mensagens achadas: ' + r.achadas.map(a => '#' + (a.i + 1) + '→linha ' + a.linha).join(', ') + '\n' +
+          'cabeçalhos: ' + r.cabecalhos.map(c => 'linha ' + c.j + (c.direita ? ' (direita)' : ' (esquerda)')).join(', ') + '\n' +
+          'linhas lidas:\n' + pr.linhas.map((l, j) => String(j).padStart(3) + '  x ' + String(Math.round(l.x0)).padStart(4) + '–' + String(Math.round(l.x1)).padStart(4) + '  ' + l.t).join('\n'));
+        desenharPrints();
+      }
+      resolver(); desenhar();
+      const marcadas = msgs.filter(m => m.ocr).length;
+      estadoOcr.textContent = 'Pronto: ' + marcadas + ' de ' + msgs.length + ' mensagens marcadas pelo print. As outras seguem a dedução (veja "pelo print" em cada uma).';
+    } catch (e) {
+      estadoOcr.textContent = 'Erro ao ler o print: ' + e.message;
+      prints.forEach(pr => { if (!pr.linhas) { pr.situacao = 'erro'; pr.cls = 'erro'; } }); desenharPrints();
+    } finally {
+      diagEl.value = relatorio.join('\n\n'); ocupado = false; atualizarBotao();
+    }
+  }
+  $('identificar').onclick = identificar;
+  $('arqPrint').addEventListener('change', e => { adicionarPrints(e.target.files); e.target.value = ''; });
+
+  // zona de colar o print (área editável para o navegador sempre entregar o evento)
+  const zona = $('zonaPrint');
+  function arquivosDe(cd) {
+    const f = [...(cd.files || [])];
+    if (!f.length && cd.items) [...cd.items].forEach(it => { if (it.kind === 'file') { const a = it.getAsFile(); if (a) f.push(a); } });
+    return f.filter(a => a.type.startsWith('image/'));
+  }
+  zona.addEventListener('paste', e => { e.preventDefault(); const cd = e.clipboardData; if (!cd) return; const imgs = arquivosDe(cd); if (imgs.length) adicionarPrints(imgs); else estadoOcr.textContent = 'Não veio imagem nessa colagem. Copie o print e tente de novo, ou escolha o arquivo.'; });
+  zona.addEventListener('beforeinput', e => e.preventDefault());
+  zona.addEventListener('drop', e => { e.preventDefault(); adicionarPrints(e.dataTransfer.files); });
+
+  // ================= colar a conversa =================
   let daColagem = false;
   entrada.addEventListener('paste', e => {
     const cd = e.clipboardData; if (!cd) return;
-    // imagem colada (print): vai para o leitor, não para o campo
-    const soImagem = cd.files && [...cd.files].some(f => f.type.startsWith('image/')) && !cd.types.includes('text/html') && !cd.types.includes('text/plain');
-    if (soImagem) { e.preventDefault(); lerPrints(cd.files); return; }
     const html = cd.getData('text/html'), plano = cd.getData('text/plain');
+    const imgs = arquivosDe(cd);
+    // imagem sem conversa do Teams junto: é um print, vai para o passo 2
+    if (imgs.length && !/data-teams/.test(html)) { e.preventDefault(); adicionarPrints(imgs); return; }
     tipos.textContent = 'Formatos: ' + ([...cd.types].join(', ') || 'nenhum');
     bruto.value = html;
     daColagem = true;
-    try { processar(html, plano); } catch (err) { origem.textContent = '(erro ao ler a colagem: ' + err.message + ')'; }
+    carregarConversa(html, plano);
     executar();
-    if (msgs.length && pendentes.length) { const fila = pendentes; pendentes = []; lerPrints(fila); }
+  });
+  entrada.addEventListener('input', e => { // digitação normal: o resultado espelha o campo
+    if (e.inputType === 'insertFromPaste' && daColagem) { daColagem = false; return; }
+    msgs = []; painel.hidden = true; saida.value = entrada.value; origem.textContent = ''; atualizarBotao();
   });
 
-  // Transforma o HTML (ou o texto simples) na saída. Serve para a colagem e para o botão "Ler como conversa".
-  function processar(html, plano) {
-    const lidas = html ? mensagensDoTeams(html) : null;
-    if (lidas) {
-      msgs = lidas.map(m => ({ ...m, quem: 'outro', manual: false }));
-      atribuir();
-      painel.hidden = false;
-      origem.textContent = '(Teams: ' + msgs.length + (msgs.length === 1 ? ' mensagem' : ' mensagens') + ')';
-      desenhar();
-    } else {
-      msgs = []; painel.hidden = true;
-      if (html) { saida.value = htmlParaTexto(html); origem.textContent = '(lido do HTML)'; }
-      else { saida.value = plano || ''; origem.textContent = plano ? '(texto simples)' : ''; }
-    }
+  function carregarConversa(html, plano) {
+    try {
+      const lidas = html ? mensagensDoTeams(html) : null;
+      if (lidas) {
+        msgs = lidas.map(m => ({ ...m, manual: null, ocr: null, pista: null, pistaFonte: '', quem: 'outro' }));
+        calcularPistas(); resolver();
+        painel.hidden = false;
+        origem.textContent = '(Teams: ' + msgs.length + (msgs.length === 1 ? ' mensagem' : ' mensagens') + ')';
+        desenhar();
+        if (prints.length) identificar(); // já tinha print esperando
+      } else {
+        msgs = []; painel.hidden = true;
+        if (html) { saida.value = htmlParaTexto(html); origem.textContent = '(lido do HTML)'; }
+        else { saida.value = plano || ''; origem.textContent = plano ? '(texto simples)' : ''; }
+      }
+    } catch (err) { origem.textContent = '(erro ao ler a colagem: ' + err.message + ')'; }
+    atualizarBotao();
   }
 
-  // Executor de HTML: mostra o HTML do campo renderizado numa área isolada (sandbox).
-  // Sem "Permitir scripts" nada executa; com a caixa marcada os scripts rodam, mas sem acesso
-  // à página, aos seus dados salvos nem a outras ferramentas (origem separada).
+  // ================= avançado: executor de HTML =================
+  // Sem "Permitir scripts" nada executa; com a caixa marcada os scripts rodam, mas isolados
+  // (origem separada): sem acesso à página, aos seus dados salvos nem a outras ferramentas.
   function executar() {
     previa.setAttribute('sandbox', $('comScripts').checked ? 'allow-scripts' : '');
     previa.srcdoc = bruto.value;
   }
   $('executar').onclick = executar;
   $('comScripts').addEventListener('change', executar);
-  $('lerHtml').onclick = () => { processar(bruto.value, ''); aviso.textContent = ''; };
-  // digitação normal: o de baixo espelha o de cima
-  entrada.addEventListener('input', e => {
-    if (e.inputType === 'insertFromPaste' && daColagem) { daColagem = false; return; }
-    msgs = []; painel.hidden = true; saida.value = entrada.value; origem.textContent = '';
-  });
+  $('lerHtml').onclick = () => carregarConversa(bruto.value, '');
 
   $('copiar').onclick = async () => {
     try { await navigator.clipboard.writeText(saida.value); aviso.textContent = 'Copiado'; }
@@ -396,8 +503,9 @@ details .acoes { margin-bottom: 12px; }
     setTimeout(() => { aviso.textContent = ''; }, 1500);
   };
   $('limpar').onclick = () => {
+    prints.forEach(p => URL.revokeObjectURL(p.url)); prints = [];
     entrada.value = ''; saida.value = ''; bruto.value = ''; tipos.textContent = ''; origem.textContent = ''; previa.srcdoc = '';
-    msgs = []; pendentes = []; $('estadoOcr').textContent = ''; painel.hidden = true; entrada.focus();
+    diagEl.value = ''; estadoOcr.textContent = ''; msgs = []; painel.hidden = true; desenharPrints(); entrada.focus();
   };
 </script>
 </body>
