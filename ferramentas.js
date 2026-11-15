@@ -9,7 +9,6 @@ const FERRAMENTAS = [
   { id: 'json-minify', nome: 'JSON Minify' },
   { id: 'contador-de-texto', nome: 'Contador de texto' },
   { id: 'receber-colagem', nome: 'Receber colagem' },
-  { id: 'teste-de-colagem', nome: 'Teste de colagem' },
   { id: 'ajuste-de-prompt', nome: 'Ajuste de prompt' },
   { id: 'resumo-em-anotacao', nome: 'Vídeo para caderno' },
   { id: 'chave-openai', nome: 'Chave da OpenAI' },
